@@ -35,6 +35,8 @@ void display_sorting_menu() {
 void handle_insertion(StudentDatabase& db) {
     string name, student_id, department, tel;
     int birth_year;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     
     do {
         cout << "Name: ";
