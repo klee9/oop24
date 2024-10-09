@@ -88,7 +88,8 @@ void handle_search(StudentDatabase& db) {
     case 1: {
         string name;
         cout << "Enter name: ";
-        cin >> name;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        getline(cin, name);
         auto results = db.search_by_name(name);
         for (const auto& student : results) cout << student << endl;
         break;
