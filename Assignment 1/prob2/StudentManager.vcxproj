@@ -127,13 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Downloads\main.cpp" />
-    <ClCompile Include="..\..\..\Downloads\student.cpp" />
-    <ClCompile Include="..\..\..\Downloads\student_database.cpp" />
+    <ClCompile Include="..\..\..\..\main.cpp" />
+    <ClCompile Include="..\..\..\..\student.cpp" />
+    <ClCompile Include="..\..\..\..\student_database.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Downloads\student.h" />
-    <ClInclude Include="..\..\..\Downloads\student_database.h" />
+    <ClInclude Include="..\..\..\..\student.h" />
+    <ClInclude Include="..\..\..\..\student_database.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
