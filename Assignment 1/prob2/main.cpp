@@ -36,9 +36,6 @@ void handle_insertion(StudentDatabase& db) {
     string name, student_id, department, tel;
     int birth_year;
     
-    // for ignoring leftover '\n' in the buffer
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    
     do {
         cout << "Name: ";
         getline(cin, name);
@@ -48,7 +45,7 @@ void handle_insertion(StudentDatabase& db) {
     
     do {
         cout << "Student ID (10 digits): ";
-        cin >> student_id;
+        getline(cin, student_id);
         if(student_id.size() != 10)
             cout << "Student ID must be 10 characters long. Try again." << endl;
     } while(student_id.size() != 10);
@@ -163,7 +160,6 @@ void handle_sorting(StudentDatabase& db) {
         return;
     }
 
-    cout << "Students sorted successfully." << endl;
     auto students = db.list_all_students();
     for (const auto& student : students) cout << student << endl;
 }
