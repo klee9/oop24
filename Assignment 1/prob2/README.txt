@@ -1,14 +1,15 @@
 OS: Microsoft Windows 11
 Compiler: Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34123 for x86
 
-How to compile:
+[How to compile]
 1. Open Visual Studio.
 2. Open the included .sln file (File > Open > project/solution > choose the provided .sln file).
 3. Build the solution (Build > Build solution).
 
-How to execute:
+[How to execute]
 1. Click run button in Visual Studio.
 
+[Side note]
 I've included a vscproj.user file to specify the command line argument(file1.txt). However, if there are no arguemts, please follow the steps below.
 1. In Visual Studio, go to the Solution Explorer (usually on the right pane).
 2. Right-click on your project (not the solution) and select Properties.
