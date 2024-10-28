@@ -136,6 +136,7 @@ inf_int operator-(const inf_int& a, const inf_int& b)
 				diff += 10;
 				borrow = 1;
 			}
+			else borrow = 0;
 			result.digits.push_back(diff + '0');
 		}
 		result.sign = operator>(a, b) ? a.sign : !a.sign;
@@ -146,10 +147,46 @@ inf_int operator-(const inf_int& a, const inf_int& b)
 	}
 }
 
-inf_int operator*(const inf_int& a, const inf_int& b)
-{
-    
+inf_int operator*(const inf_int& a, const inf_int& b) {
+    inf_int result;
+    result.digits = karatsuba(a.digits, b.digits);
+    result.sign = (a.sign == b.sign);
+    result.length = result.digits.size();
+    return result;
 }
+
+// Karatsuba multiplication for large integers
+string karatsuba(const string& x, const string& y) {
+    int n = max(x.size(), y.size());
+
+    // use direct multiplication for smaller numbers
+    if (n <= 10)
+        return to_string(stoll(x) * stoll(y));
+
+    // zero padding
+    int half = n / 2;
+
+    string a = x.substr(0, x.size() - half);
+    string b = x.substr(x.size() - half);
+    string c = y.substr(0, y.size() - half);
+    string d = y.substr(y.size() - half);
+
+    string ac = karatsuba(a, c);
+    string bd = karatsuba(b, d);
+    string ab_cd = karatsuba(add_strings(a, b), add_strings(c, d));
+    string middle = subtract_strings(subtract_strings(ab_cd, ac), bd);
+
+    return add_strings(add_strings(shift_left(ac, 2 * half), shift_left(middle, half)), bd);
+}
+
+inf_int operator/(const inf_int& a, const inf_int& b) 
+{
+	
+}
+
+
+
+
 
 ostream& operator<<(ostream& out, const inf_int& a)
 {
