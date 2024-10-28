@@ -2,21 +2,18 @@
 #define _INF_INT_H_
 
 #include <iostream>
+#include <string>
 
 class inf_int
 {
 private :
-    char* digits;  // You may modify this to "string digits;" if you want.
+    string digits;
     unsigned int length;
-    bool thesign;   // true if positive , false if negative.
-    // ex) 15311111111111111 -> digits="11111111111111351", length=17, thesign=true;
-    // ex) -12345555555555 -> digits="55555555554321", length=14, thesign=false
-    // You may modify or add private members of inf_int class. So, it is OK to insert Add() private member function in inf_int class. However, You may not modify public members of inf_int class.
-
+    bool sign;   // true if positive , false if negative
 public :
     inf_int();               // assign 0 as a default value
     inf_int(int);
-    inf_int(const char* );   // you may modify this to "inf_int(const string);"
+    inf_int(const string);
     inf_int(const inf_int&); // copy constructor
     ~inf_int(); // destructor
 
