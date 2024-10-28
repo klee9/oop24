@@ -10,6 +10,7 @@ private :
     string digits;
     unsigned int length;
     bool sign;   // true if positive , false if negative
+
 public :
     inf_int();               // assign 0 as a default value
     inf_int(int);
