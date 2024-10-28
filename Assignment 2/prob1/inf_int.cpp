@@ -15,31 +15,17 @@ inf_int::inf_int(int n)
 	this->length = this->digits.size();
 }
 
-	if(i==0){	// 숫자의 절댓값이 0일 경우
-		new (this) inf_int();	// 생성자 재호출...gcc에서 컴파일에러가 있다고 함. inf_int()의 경우 별개의 인스턴스가 생성됨. 
-	}else{
-		buf[i]='\0';
-
-		this->digits=new char[i+1];
-		this->length=i;
-		strcpy(this->digits, buf);
-	}
-}
-
-inf_int::inf_int(const char* str)
+inf_int::inf_int(const string str)
 {
-	// to be filled 
-	// 부호 처리 
-	// "100"이 들어왔다면 내부 표현에 맞게 "001"로 변환
 	// ex) "-1053" -> thesign=false, digits="3501", len=4
+	this->sign = (str[0] == '-') ? false : true;
+	
 }
 
 inf_int::inf_int(const inf_int& a){
-	this->digits=new char[a.length+1];
-
-	strcpy(this->digits, a.digits);
+	this->digits = a.digits;
 	this->length=a.length;
-	this->thesign=a.thesign;
+	this->sign=a.sign;
 }
 
 inf_int::~inf_int(){
