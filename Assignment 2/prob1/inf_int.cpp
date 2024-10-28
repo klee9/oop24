@@ -141,7 +141,8 @@ inf_int operator-(const inf_int& a, const inf_int& b)
 		result.sign = operator>(a, b) ? a.sign : !a.sign;
 	}
 	else {
-		// -1 - 5, 1 - (-5), -6 - 4, -6 - (-4)
+		b.sign = !b.sign;
+		return operator+(a, b);
 	}
 }
 
