@@ -163,7 +163,7 @@ string karatsuba(const string& x, const string& y) {
     if (n <= 10)
         return to_string(stoll(x) * stoll(y));
 
-    // zero padding
+    // add zero padding
     int half = n / 2;
 
     string a = x.substr(0, x.size() - half);
@@ -183,10 +183,6 @@ inf_int operator/(const inf_int& a, const inf_int& b)
 {
 	
 }
-
-
-
-
 
 ostream& operator<<(ostream& out, const inf_int& a)
 {
