@@ -166,17 +166,18 @@ string karatsuba(const string& x, const string& y) {
     // add zero padding
     int half = n / 2;
 
-    string a = x.substr(0, x.size() - half);
-    string b = x.substr(x.size() - half);
-    string c = y.substr(0, y.size() - half);
-    string d = y.substr(y.size() - half);
+	inf_int a(x.substr(0, x.size() - half));
+    inf_int b(x.substr(x.size() - half));
+    inf_int c(y.substr(0, y.size() - half));
+    inf_int d(y.substr(y.size() - half));
 
-    string ac = karatsuba(a, c);
-    string bd = karatsuba(b, d);
-    string ab_cd = karatsuba(add_strings(a, b), add_strings(c, d));
-    string middle = subtract_strings(subtract_strings(ab_cd, ac), bd);
+	inf_int ac(karatsuba(a, c));
+	int_int bd(karatsuba(b, d));
+	
+    inf_int ab_cd(karatsuba(operator+(a, b), operator+(c, d)));
+    inf_int middle(operator-(operator-(ab_cd, ac), bd));
 
-    return add_strings(add_strings(shift_left(ac, 2 * half), shift_left(middle, half)), bd);
+    return operator+(operator+(shift_left(ac, 2 * half), shift_left(middle, half)), bd).digits;
 }
 
 inf_int operator/(const inf_int& a, const inf_int& b) 
