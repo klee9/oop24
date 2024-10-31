@@ -167,7 +167,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
     inf_int quotient("0");
     inf_int temp("0");
 
-    for (int i = dividend.length - 1; i >= 0; --i) {
+    for (int i = dividend.length - 1; i >= 0; i--) {
         temp.digits.insert(temp.digits.begin(), dividend.digits[i]);
 
         while (temp >= divisor) {
