@@ -4,37 +4,31 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <queue>
 
 using namespace std;
 
-int main() {
-    cout << "type 'q' to exit" << endl;
+int main()
+{
+    // input format: (int)(space)(operator)(space)(int)
+    string input, left_op, right_op, op;
     
-    char quit = q;
-    string cmd, temp;
+    while(true) {
+        getline(cin, input);
+        if(input == 'q') return 0;
+        
+        sstream stream(input)
+        sstream >> left_op >> op >> right_op;
     
-    while((q = getchar()) != 'q') {
-        vector<string> op;
-        vector<int> order;
-        inf_int answer;
+        inf_int answer, l(left_op), r(right_op);
         
-        getline(cin, cmd);
-        sstream stream(cmd);
-        
-        while(stream >> temp) {
-            // add calculation order
-            if(temp == '*' || temp == '/')
-                order.push_back(op.size());
-            op.push_back(temp);
+        if(op == '+') answer = l + r;
+        else if(op == '-') answer = l - r;
+        else if(op == '*') answer = l * r;
+        else if(op == '/') answer = l / r;
+        else {
+            cout << "unsupported operation." << endl;
+            return 1;
         }
-
-        for(int i = 0; i < order.size(); i++) {
-            
-            op[order[i]-1) = ;
-        }
-        
-        // 1 3 5 7 9 ...
-        // do things in the order vector first.
-        
     }
 }
