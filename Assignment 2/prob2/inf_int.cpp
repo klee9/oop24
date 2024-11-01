@@ -18,7 +18,7 @@ inf_int::inf_int(int n) {
     this->length = this->digits.size();
 }
 
-inf_int::inf_int(const string& str) {
+inf_int::inf_int(const string str) {
     if (str.empty()) {
         this->sign = true;
         this->digits = "0";
@@ -126,35 +126,33 @@ inf_int operator-(const inf_int& a, const inf_int& b) {
 
 inf_int operator*(const inf_int& a, const inf_int& b) {
     inf_int result;
-    result.digits = karatsuba(a.digits, b.digits);
-    result.sign = (a.sign == b.sign);
+    result.digits = string(a.length + b.length, '0');  // Reserve space for the maximum possible length
+    result.sign = (a.sign == b.sign);  // Result is positive if signs are the same
+
+    for (int i = 0; i < a.length; ++i) {
+        int carry = 0;
+        int digit_a = a.digits[i] - '0';
+
+        for (int j = 0; j < b.length; ++j) {
+            int digit_b = b.digits[j] - '0';
+            int sum = (result.digits[i + j] - '0') + digit_a * digit_b + carry;
+
+            result.digits[i + j] = (sum % 10) + '0';  // Update the current position with the last digit of sum
+            carry = sum / 10;  // Compute the carry for the next position
+        }
+
+        if (carry > 0) {
+            result.digits[i + b.length] += carry;  // Add remaining carry to the next position
+        }
+    }
+
+    // Remove leading zeros
+    while (result.digits.size() > 1 && result.digits.back() == '0') {
+        result.digits.pop_back();
+    }
+
     result.length = result.digits.size();
     return result;
-}
-
-// Helper function to shift the digits left by `positions`
-string shift_left(const string& str, int positions) {
-    return str + string(positions, '0');
-}
-
-// Karatsuba multiplication for large integers
-string karatsuba(const string& x, const string& y) {
-    int n = max(x.size(), y.size());
-
-    if (n <= 10) return to_string(stoll(x) * stoll(y));
-
-    int half = n / 2;
-    inf_int a(x.substr(0, x.size() - half));
-    inf_int b(x.substr(x.size() - half));
-    inf_int c(y.substr(0, y.size() - half));
-    inf_int d(y.substr(y.size() - half));
-
-    inf_int ac = karatsuba(a.digits, c.digits);
-    inf_int bd = karatsuba(b.digits, d.digits);
-    inf_int ab_cd = karatsuba((a + b).digits, (c + d).digits);
-    inf_int middle = ab_cd - ac - bd;
-
-    return shift_left(ac.digits, 2 * half) + shift_left(middle.digits, half) + bd.digits;
 }
 
 inf_int operator/(const inf_int& a, const inf_int& b) {
@@ -162,27 +160,43 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
 
     inf_int dividend = a;
     inf_int divisor = b;
-    dividend.sign = divisor.sign = true;
+    dividend.sign = divisor.sign = true; // Work with absolute values for division
 
     inf_int quotient("0");
     inf_int temp("0");
 
+    // Perform long division manually
     for (int i = dividend.length - 1; i >= 0; i--) {
+        // Shift left: Insert the current dividend digit into temp
         temp.digits.insert(temp.digits.begin(), dividend.digits[i]);
+        temp.length = temp.digits.size();
 
-        while (temp >= divisor) {
-            temp = temp - divisor;
-            quotient.digits[i]++;
+        // Normalize temp by removing leading zeros
+        while (temp.digits.size() > 1 && temp.digits.back() == '0') {
+            temp.digits.pop_back();
+            temp.length = temp.digits.size();
         }
+
+        // Determine how many times divisor fits into temp
+        int count = 0;
+        while (temp > divisor || temp == divisor) {
+            temp = temp - divisor;
+            count++;
+        }
+
+        // Append the quotient digit
+        quotient.digits.insert(quotient.digits.begin(), count + '0');
     }
 
-    quotient.sign = (a.sign == b.sign);
-    reverse(quotient.digits.begin(), quotient.digits.end());
-
-    // Remove leading zeros
-    while (quotient.digits.size() > 1 && quotient.digits.back() == '0')
+    // Remove leading zeros from the quotient
+    while (quotient.digits.size() > 1 && quotient.digits.back() == '0') {
         quotient.digits.pop_back();
+    }
 
+    // Set the correct sign for the quotient
+    quotient.sign = (a.sign == b.sign);
+
+    // Update the length of the quotient
     quotient.length = quotient.digits.size();
     return quotient;
 }
@@ -193,4 +207,16 @@ ostream& operator<<(ostream& out, const inf_int& a) {
     reverse(reversed_digits.begin(), reversed_digits.end());
     out << reversed_digits;
     return out;
+}
+
+istream& operator>>(istream& in, inf_int& a) {
+    string input;
+    in >> input;
+
+    a.sign = (input[0] != '-');
+    a.digits = (input[0] == '-') ? input.substr(1) : input;
+    reverse(a.digits.begin(), a.digits.end());
+    a.length = a.digits.size();
+
+    return in;
 }
