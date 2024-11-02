@@ -30,5 +30,8 @@ int main()
             cout << "unsupported operation." << endl;
             return 1;
         }
+        cout << answer << endl;
     }
+    
+    return 0;
 }
