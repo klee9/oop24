@@ -18,17 +18,13 @@ int main()
         istringstream stream(input);
         stream >> left_op >> op >> right_op;
         
-        inf_int answer, l(left_op), r(right_op);
+        inf_int l(left_op), r(right_op);
         
-        if(op == "+") answer = l + r;
-        else if(op == "-") answer = l - r;
-        else if(op == "*") answer = l * r;
-        else if(op == "/") answer = l / r;
-        else {
-            cout << "unsupported operation." << endl;
-            return 1;
-        }
-        cout << answer << endl;
+        if(op == "+") cout << l + r << endl;
+        else if(op == "-") cout << l - r << endl;
+        else if(op == "*") cout << l * r << endl;
+        else if(op == "/") cout << l / r << endl;
+        else cout << "unsupported operation." << endl;
     }
     return 0;
 }
