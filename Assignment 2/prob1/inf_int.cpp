@@ -19,7 +19,7 @@ inf_int::inf_int(int n) {
 }
 
 inf_int::inf_int(const string str) {
-    if (str.empty()) {
+    if (str.empty() || str == "-0") {
         this->sign = true;
         this->digits = "0";
         this->length = 1;
