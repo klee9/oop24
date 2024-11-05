@@ -5,50 +5,43 @@
 
 using namespace std;
 
-inf_int::inf_int() {
-    this->digits = "0";
-    this->length = 1;
-    this->sign = true;
-}
+inf_int::inf_int() : digits("0"), length(1), sign(true) {}
 
 inf_int::inf_int(int n) {
-    this->sign = n >= 0;
-    this->digits = to_string(abs(n));
-    reverse(this->digits.begin(), this->digits.end());
-    this->length = this->digits.size();
+    sign = (n >= 0);
+    digits = to_string(abs(n));
+    reverse(digits.begin(), digits.end());
+    length = digits.size();
 }
 
 inf_int::inf_int(const string str) {
     if (str.empty()) {
-        this->sign = true;
-        this->digits = "0";
-        this->length = 1;
+        sign = true;
+        digits = "0";
+        length = 1;
     } else {
-        this->sign = (str[0] != '-');
-        this->digits = (str[0] == '-') ? str.substr(1) : str;
-        reverse(this->digits.begin(), this->digits.end());
-        this->length = this->digits.size();
+        sign = (str[0] != '-');
+        digits = (str[0] == '-') ? str.substr(1) : str;
+        reverse(digits.begin(), digits.end());
+        length = digits.size();
     }
 }
 
-inf_int::inf_int(const inf_int& a) {
-    this->digits = a.digits;
-    this->length = a.length;
-    this->sign = a.sign;
-}
+inf_int::inf_int(const inf_int& a) : digits(a.digits), length(a.length), sign(a.sign) {}
 
 inf_int::~inf_int() {}
 
 inf_int& inf_int::operator=(const inf_int& a) {
-    if (this == &a) return *this;
-    this->digits = a.digits;
-    this->length = a.length;
-    this->sign = a.sign;
+    if (this != &a) {
+        digits = a.digits;
+        length = a.length;
+        sign = a.sign;
+    }
     return *this;
 }
 
 bool operator==(const inf_int& a, const inf_int& b) {
-    return (a.digits == b.digits && a.sign == b.sign);
+    return a.sign == b.sign && a.digits == b.digits;
 }
 
 bool operator!=(const inf_int& a, const inf_int& b) {
@@ -56,14 +49,15 @@ bool operator!=(const inf_int& a, const inf_int& b) {
 }
 
 bool operator>(const inf_int& a, const inf_int& b) {
-    if (a.sign != b.sign) return a.sign;
+    if (a.sign != b.sign) {
+        return a.sign;
+    }
 
-    int len = max(a.length, b.length);
-    
-    string temp_a = string(len - a.length, '0') + string(a.digits.rbegin(), a.digits.rend());
-    string temp_b = string(len - b.length, '0') + string(b.digits.rbegin(), b.digits.rend());
-
-    return a.sign ? (temp_a > temp_b) : (temp_a < temp_b);
+    if (a.length != b.length) {
+        return a.sign ? (a.length > b.length) : (a.length < b.length);
+    }
+        
+    return a.sign ? (a.digits > b.digits) : (a.digits < b.digits);
 }
 
 bool operator<(const inf_int& a, const inf_int& b) {
@@ -72,68 +66,84 @@ bool operator<(const inf_int& a, const inf_int& b) {
 
 inf_int operator+(const inf_int& a, const inf_int& b) {
     inf_int result;
-    result.digits = "";
-
-    int carry = 0;
-    int len = max(a.length, b.length);
-
-    // add zero-paddings to make both operands have equal lengths
+    int carry = 0, len = max(a.length, b.length);
+    
     string digits_a = a.digits + string(len - a.length, '0');
     string digits_b = b.digits + string(len - b.length, '0');
 
     if (a.sign == b.sign) {
-        for (int i = 0; i < len; ++i) {
+        for (int i = 0; i < len; i++) {
             int sum = (digits_a[i] - '0') + (digits_b[i] - '0') + carry;
             carry = sum / 10;
             result.digits.push_back((sum % 10) + '0');
         }
-        if (carry) result.digits.push_back(carry + '0');
+
+        if (carry) {
+            result.digits.push_back(carry + '0');
+        }
+        
         result.sign = a.sign;
     } else {
+        // convert to subtraction if signs differ
         inf_int temp_b = b;
         temp_b.sign = !b.sign;
         result = a - temp_b;
     }
+
+    // remove leading zeros
+    while (result.digits.size() > 1 && result.digits.back() == '0') {
+        result.digits.pop_back();
+    }
+        
     result.length = result.digits.size();
     return result;
 }
 
 inf_int operator-(const inf_int& a, const inf_int& b) {
+    if (a == b) {
+        return inf_int("0");
+    }
+    
     inf_int result;
-    result.digits = "";
-
-    int borrow = 0;
-    int len = max(a.length, b.length);
-
-    // add zero-padding to make both operands have equal lengths
+    int borrow = 0, len = max(a.length, b.length);
+    
     string digits_a = a.digits + string(len - a.length, '0');
     string digits_b = b.digits + string(len - b.length, '0');
 
     if (a.sign == b.sign) {
+        // determine if |a| >= |b|, otherwise swap digits for correct subtraction order
+        bool is_a_greater = (a > b) == a.sign;
         
-        if (a < b) swap(digits_a, digits_b);
+        if (!is_a_greater) {
+            swap(digits_a, digits_b);
+            result.sign = !a.sign;
+        } else {
+            result.sign = a.sign;
+        }
 
+        // perform subtraction
         for (int i = 0; i < len; i++) {
             int diff = (digits_a[i] - '0') - (digits_b[i] - '0') - borrow;
+            
             if (diff < 0) {
                 diff += 10;
                 borrow = 1;
             } else {
                 borrow = 0;
             }
+
             result.digits.push_back(diff + '0');
         }
-
-        result.sign = (a > b || a == b) ? a.sign : !a.sign;
-
-        // remove leading zeros from the result
-        while (result.digits.size() > 1 && result.digits.back() == '0') {
-            result.digits.pop_back();
-        }
     } else {
+        // if signs differ, convert subtraction to addition
         inf_int temp_b = b;
         temp_b.sign = !b.sign;
-        result = a + temp_b;
+        return a + temp_b;
+    }
+
+    // remove leading zeros
+    while (result.digits.size() > 1 && result.digits.back() == '0') {
+        result.digits.pop_back();
     }
 
     result.length = result.digits.size();
@@ -142,8 +152,6 @@ inf_int operator-(const inf_int& a, const inf_int& b) {
 
 inf_int operator*(const inf_int& a, const inf_int& b) {
     inf_int result;
-
-    // reserve space for maximum possible length
     result.digits = string(a.length + b.length, '0');
     result.sign = (a.sign == b.sign);
 
@@ -154,62 +162,55 @@ inf_int operator*(const inf_int& a, const inf_int& b) {
         for (int j = 0; j < b.length; ++j) {
             int digit_b = b.digits[j] - '0';
             int sum = (result.digits[i + j] - '0') + digit_a * digit_b + carry;
-
-            // update the current position with the last digit of sum
-            result.digits[i + j] = (sum % 10) + '0';  
+            result.digits[i + j] = (sum % 10) + '0';
             carry = sum / 10;
         }
 
-        // add remaining carry to the next position
         if (carry)
             result.digits[i + b.length] += carry;
     }
 
     // remove leading zeros
-    while (result.digits.size() && result.digits.back() == '0')
+    while (result.digits.size() > 1 && result.digits.back() == '0') {
         result.digits.pop_back();
+    }
 
     result.length = result.digits.size();
     return result;
 }
 
 inf_int operator/(const inf_int& a, const inf_int& b) {
-    if (b.digits == "0") throw runtime_error("Division by zero");
+    if (b.digits == "0")
+        throw runtime_error("division by zero");
 
     inf_int dividend = a, divisor = b, temp("0"), answer("0");
     string quotient = "", frac = ".";
-    
     temp.digits = "";
-
-    // using absolute value for convenience
     dividend.sign = divisor.sign = true;
 
-    // integer part
     for (int i = dividend.length - 1; i >= 0; i--) {
         temp.digits = dividend.digits[i] + temp.digits;
         temp.length = temp.digits.size();
-        
-        // check how many times divisor can fit into temp
         int cnt = 0;
+
         while (temp > divisor || temp == divisor) {
             temp = temp - divisor;
             cnt++;
         }
-        
-        if(temp.digits == "0") 
+
+        if(temp.digits == "0") {
             temp.digits = "";
-            
+        }
+        
         quotient = to_string(cnt) + quotient;
     }
 
-    // fraction part (precision up to 50 digits)
     int precision = 50;
     while (temp.digits != "0" && precision) {
         temp.digits.insert(temp.digits.begin(), '0');
         temp.length = temp.digits.size();
-
-        // check how many times divisor can fit into temp
         int cnt = 0;
+
         while(temp > divisor || temp == divisor) {
             temp = temp - divisor;
             cnt++;
@@ -221,15 +222,21 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
 
     answer.sign = (a.sign == b.sign);
     answer.digits = frac + quotient;
-    while(answer.digits.back() == '0') 
+
+    // remove leading zeros
+    while (answer.digits.size() > 1 && answer.digits.back() == '0') {
         answer.digits.pop_back();
+    }
+
     answer.length = answer.digits.size();
-    
     return answer;
 }
 
 ostream& operator<<(ostream& out, const inf_int& a) {
-    if (!a.sign) out << '-';
+    if (!a.sign) {
+        out << '-';
+    }
+    
     string reversed_digits = a.digits;
     reverse(reversed_digits.begin(), reversed_digits.end());
     out << reversed_digits;
@@ -240,10 +247,20 @@ istream& operator>>(istream& in, inf_int& a) {
     string input;
     in >> input;
 
-    a.sign = (input[0] != '-');
-    a.digits = (input[0] == '-') ? input.substr(1) : input;
-    reverse(a.digits.begin(), a.digits.end());
-    a.length = a.digits.size();
+    if (input.empty() || input == "0") {
+        // set default zero values
+        a.sign = true;
+        a.digits = "0";
+        a.length = 1;
+    }
+
+    else {
+        // initialize from input string
+        a.sign = (input[0] != '-');
+        a.digits = (input[0] == '-') ? input.substr(1) : input;
+        reverse(a.digits.begin(), a.digits.end());
+        a.length = a.digits.size();
+    }
 
     return in;
 }
