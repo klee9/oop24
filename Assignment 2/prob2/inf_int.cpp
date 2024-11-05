@@ -230,10 +230,12 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
         precision--;
     }
 
+    while(quotient.size() > 1 && quotient.back() == '0') {
+        quotient.pop_back();
+    }
+        
     answer.sign = (a.sign == b.sign);
     answer.digits = frac + quotient;
-    while(answer.digits.size() > 1 && answer.digits.back() == '0') 
-        answer.digits.pop_back();
     answer.length = answer.digits.size();
     
     return answer;
