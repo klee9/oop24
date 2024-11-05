@@ -56,21 +56,18 @@ bool operator!=(const inf_int& a, const inf_int& b) {
 }
 
 bool operator>(const inf_int& a, const inf_int& b) {
-    // if a and b have different signs, a > b if a has a sign
     if (a.sign != b.sign) return a.sign;
-
-    // if a and b have same signs, a > b if a is positive and has a longer length
-    if (a.length != b.length)
-        return a.sign ? (a.length > b.length) : (a.length < b.length);
-    
-    // if a and b have same signs and lengths, a > b if a is positive and has a longer length 
-    string temp_a = string(a.digits.end(), a.digits.begin());
-    string temp_b = string(b.digits.end(), b.digits.begin());
-    return a.sign ? (temp_a > temp_b) : (temp_a < temp_b);
+    else {
+        // add zero padding for comparison
+        int len = max(a.length, b.length);
+        string temp_a = string("0", len - a.length) + string(a.digits.end(), a.digits.begin());
+        string temp_b = string("0", len - b.length) + string(b.digits.end(), b.digits.begin());
+        
+        return a.sign ? (temp_a > temp_b) : (temp_a < temp_b);
+    }
 }
 
 bool operator<(const inf_int& a, const inf_int& b) {
-    // the truth value of < is the NOT of a > b coupled with != logic
     return !(a > b) && (a != b);
 }
 
@@ -176,7 +173,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
     // using absolute value for convenience
     dividend.sign = divisor.sign = true;
 
-    // integer part
+    // integer part (ex. 12345 / 678)
     for (int i = dividend.length - 1; i >= 0; i--) {
         temp.digits = dividend.digits[i] + temp.digits;
         temp.length = temp.digits.size();
