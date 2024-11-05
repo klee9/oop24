@@ -168,7 +168,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
     if (b.digits == "0") throw runtime_error("Division by zero");
 
     inf_int dividend = a, divisor = b, temp("0"), answer("0");
-    string quotient = "", frac = ".";
+    string quotient = "", frac = "";
 
     // using absolute value for convenience
     dividend.sign = divisor.sign = true;
@@ -206,7 +206,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
     }
 
     answer.sign = (a.sign == b.sign);
-    answer.digits = frac + quotient;
+    answer.digits = frac + "." + quotient;
     answer.length = answer.digits.size();
     
     return answer;
