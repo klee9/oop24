@@ -184,7 +184,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
     // using absolute value for convenience
     dividend.sign = divisor.sign = true;
 
-    // integer part (ex. 12345 / 678)
+    // integer part
     for (int i = dividend.length - 1; i >= 0; i--) {
         temp.digits = dividend.digits[i] + temp.digits;
         temp.length = temp.digits.size();
@@ -194,8 +194,11 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
         while (temp > divisor || temp == divisor) {
             temp = temp - divisor;
             cnt++;
-        }  
-        cout << "current: " << cnt << ", divisor: " << temp.digits << endl;
+        }
+        
+        if(temp.digits == "0") 
+            temp.digits = "";
+            
         quotient = to_string(cnt) + quotient;
     }
 
@@ -211,7 +214,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
             temp = temp - divisor;
             cnt++;
         }
-        cout << "fcur: " << cnt << " div: "<<divisor.digits<< " temp: "<<temp.digits<<endl;
+        
         frac = to_string(cnt) + frac;
         precision--;
     }
