@@ -9,6 +9,9 @@ int main()
 {
     string input, left_op, right_op, op;
     
+    cout << "A simple calculator for infinite integer. Enter q to exit." << endl;
+    cout << "Usage: (integer)(space)(operator)(space)(integer)" << endl;
+    
     while(true) {
         // get input
         getline(cin, input);
