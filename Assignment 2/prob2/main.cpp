@@ -1,3 +1,5 @@
+// calculator for inf_int class
+
 #include "inf_int.h"
 #include <iostream>
 #include <string>
