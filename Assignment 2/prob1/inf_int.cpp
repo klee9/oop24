@@ -229,7 +229,7 @@ inf_int operator/(const inf_int& a, const inf_int& b) {
         frac = to_string(cnt) + frac;
         precision--;
     }
-    
+
     while(quotient.size() > 1 && quotient.back() == '0') {
         quotient.pop_back();
     }
