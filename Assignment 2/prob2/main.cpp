@@ -23,10 +23,10 @@ int main()
         
         inf_int l(left_op), r(right_op);
         
-        if(op == "+") cout << l + r << endl;
-        else if(op == "-") cout << l - r << endl;
-        else if(op == "*") cout << l * r << endl;
-        else if(op == "/") cout << l / r << endl;
+        if(op == "+") cout << "Output: " << l + r << endl;
+        else if(op == "-") cout << "Output: " << l - r << endl;
+        else if(op == "*") cout << "Output: " << l * r << endl;
+        else if(op == "/") cout << "Output: " << l / r << endl;
         else cout << "unsupported operation." << endl;
     }
     return 0;
