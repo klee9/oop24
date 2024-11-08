@@ -127,11 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Downloads\inf_int.cpp" />
-    <ClCompile Include="..\..\..\Downloads\main.cpp" />
+    <ClCompile Include="$(ProjectDir)inf_int.cpp" />
+    <ClCompile Include="$(ProjectDir)main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Downloads\inf_int.h" />
+    <ClInclude Include="$(ProjectDir)inf_int.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
