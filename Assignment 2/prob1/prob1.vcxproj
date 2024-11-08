@@ -127,8 +127,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\OneDrive\바탕 화면\prob1\inf_int.cpp" />
-    <ClCompile Include="..\..\..\OneDrive\바탕 화면\prob1\main.cpp" />
+    <ClCompile Include="$(ProjectDir)inf_int.cpp" />
+    <ClCompile Include="$(ProjectDir)main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inf_int.h" />
