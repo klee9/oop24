@@ -1,62 +1,156 @@
 #include <iostream>
+#include <string>
 #include "inf_int.h"
 
 using namespace std;
 
-int main() {
-    // Testing Constructors
-    cout << "Testing Constructors...\n";
-    inf_int a;                    // Default constructor
-    inf_int b(123456789);         // Integer constructor
-    inf_int c("-987654321");      // String constructor (negative)
-    inf_int d("123456789");       // String constructor (positive)
-    inf_int e(b);                 // Copy constructor
-    cout << "Default: " << a << " (Expected: 0)\n";
-    cout << "From int: " << b << " (Expected: 123456789)\n";
-    cout << "From negative string: " << c << " (Expected: -987654321)\n";
-    cout << "From positive string: " << d << " (Expected: 123456789)\n";
-    cout << "Copy: " << e << " (Expected: 123456789)\n";
+// checks if the result matches the expected value
+void check_result(const inf_int& actual, const string& expected) {
+    string actual_str = (actual.sign ? "" : "-") + string(actual.digits.rbegin(), actual.digits.rend());
+    cout << actual << " (Expected: " << expected << ") -- ";
+    if (actual_str == expected) {
+        cout << "match\n";
+    } else {
+        cout << "error\n";
+    }
+}
 
-    // Testing Comparison Operators
+// checks comparison operations
+void check_comparison(const inf_int& num1, const inf_int& num2, bool expected_eq, bool expected_ne, bool expected_lt, bool expected_gt) {
+    cout << num1 << " == " << num2 << ": " << (num1 == num2) << " (Expected: " << expected_eq << ")\n";
+    cout << num1 << " != " << num2 << ": " << (num1 != num2) << " (Expected: " << expected_ne << ")\n";
+    cout << num1 << " < " << num2 << ": " << (num1 < num2) << " (Expected: " << expected_lt << ")\n";
+    cout << num1 << " > " << num2 << ": " << (num1 > num2) << " (Expected: " << expected_gt << ")\n";
+}
+
+int main() {
+    // testing constructors
+    cout << "Testing Constructors...\n";
+    
+    inf_int a;                    
+    inf_int b(123456789);
+    inf_int c("-987654321");
+    inf_int d("123456789");       
+    inf_int e(b);                
+
+    cout << "Default Constructor: "; check_result(a, "0");
+    cout << "From Integer: "; check_result(b, "123456789");
+    cout << "From Negative String: "; check_result(c, "-987654321");
+    cout << "From Positive String: "; check_result(d, "123456789");
+    cout << "Copy Constructor: "; check_result(e, "123456789");
+
+    // testing comparison operators
     cout << "\nTesting Comparison Operators...\n";
     inf_int f("12345"), g("54321"), h("12345"), i("-12345");
 
-    cout << "f == h: " << (f == h) << " (Expected: 1)\n";
-    cout << "f != g: " << (f != g) << " (Expected: 1)\n";
-    cout << "f < g: " << (f < g) << " (Expected: 1)\n";
-    cout << "g > f: " << (g > f) << " (Expected: 1)\n";
-    cout << "i < f: " << (i < f) << " (Expected: 1)\n";
-    cout << "i == i: " << (i == i) << " (Expected: 1)\n";
+    cout << "Comparing f and h (equal positive numbers):\n";
+    check_comparison(f, h, true, false, false, false);
 
-    // Testing Arithmetic Operators
-    cout << "\nTesting Arithmetic Operators...\n";
-    inf_int j("12345678901234567890"), k("98765432109876543210");
+    cout << "\nComparing f and g (different positive numbers):\n";
+    check_comparison(f, g, false, true, true, false);
 
-    cout << "j + k: " << (j + k) << " (Expected: 111111111011111111100)\n";
-    cout << "k - j: " << (k - j) << " (Expected: 86419753208641975320)\n";
-    cout << "j * k: " << (j * k) << " (Expected: 1219326311370217952237463801111263526900)\n";
+    cout << "\nComparing g and f (reverse order):\n";
+    check_comparison(g, f, false, true, false, true);
 
-    inf_int l("50000000000000000001"), m("10");
-    cout << "l / m: " << (l / m) << " (Expected: 5000000000000000000.1)\n";
-    
-    // Edge cases for addition
-    inf_int negJ("-12345678901234567890");
-    cout << "j + negJ: " << (j + negJ) << " (Expected: 0)\n";   // Zero check
+    cout << "\nComparing i and f (negative vs positive):\n";
+    check_comparison(i, f, false, true, true, false);
 
-    // Edge cases for subtraction
-    cout << "j - j: " << (j - j) << " (Expected: 0)\n";         // Zero check
-    cout << "j - k: " << (j - k) << " (Expected: -86419753208641975320)\n"; // Negative result check
+    cout << "\nComparing i and i (equal negative numbers):\n";
+    check_comparison(i, i, true, false, false, false);
 
-    // Edge case for division by a random long number, checking 50-digit precision
-    inf_int n("1234567890123456789012345678901234567890"), o("987654321");
-    cout << "n / o (precision test): " << (n / o) << " (Expected: around 1250000000125.0000000000...)\n";
+    // testing addition
+    cout << "\nTesting Addition...\n";
+    inf_int pos1("12345678901234567890"), pos2("98765432109876543210");
+    inf_int neg1("-12345678901234567890"), neg2("-98765432109876543210");
 
-    // Testing I/O Operators
+    cout << "Positive + Positive: ";
+    check_result(pos1 + pos2, "111111111011111111100");
+
+    cout << "Positive + Negative (same magnitude): ";
+    check_result(pos1 + neg1, "0");
+
+    cout << "Positive + Negative (different magnitude): ";
+    check_result(pos1 + neg2, "-86419753208641975320");
+
+    cout << "Negative + Negative: ";
+    check_result(neg1 + neg2, "-111111111011111111100");
+
+    // testing subtraction
+    cout << "\nTesting Subtraction...\n";
+    cout << "Positive - Positive (same value): ";
+    check_result(pos1 - pos1, "0");
+
+    cout << "Positive - Positive (different values): ";
+    check_result(pos2 - pos1, "86419753208641975320");
+
+    cout << "Positive - Negative: ";
+    check_result(pos1 - neg1, "24691357802469135780");
+
+    cout << "Negative - Positive: ";
+    check_result(neg1 - pos1, "-24691357802469135780");
+
+    cout << "Negative - Negative (same value): ";
+    check_result(neg1 - neg1, "0");
+
+    cout << "Negative - Negative (different values): ";
+    check_result(neg2 - neg1, "-86419753208641975320");
+
+    // testing multiplication with all sign combinations
+    cout << "\nTesting Multiplication...\n";
+    inf_int mul_pos("123456"), mul_neg("-654321");
+
+    cout << "Positive * Positive: ";
+    check_result(mul_pos * mul_pos, "15241383936");
+
+    cout << "Positive * Negative: ";
+    check_result(mul_pos * mul_neg, "-80779853376");
+
+    cout << "Negative * Positive: ";
+    check_result(mul_neg * mul_pos, "-80779853376");
+
+    cout << "Negative * Negative: ";
+    check_result(mul_neg * mul_neg, "428107856641");
+
+    // testing division with all sign combinations
+    cout << "\nTesting Division...\n";
+    inf_int div_pos("121932631112635269"), div_neg("-121932631112635269");
+
+    cout << "Positive / Positive: ";
+    check_result(div_pos / mul_pos, "987654");
+
+    cout << "Positive / Negative: ";
+    check_result(div_pos / mul_neg, "-186588");
+
+    cout << "Negative / Positive: ";
+    check_result(div_neg / mul_pos, "-987654");
+
+    cout << "Negative / Negative: ";
+    check_result(div_neg / mul_neg, "186588");
+
+    // edge cases with zero
+    cout << "\nTesting Edge Cases with Zero...\n";
+    inf_int zero("0"), one("1"), neg_one("-1");
+
+    cout << "Zero + Zero: "; check_result(zero + zero, "0");
+    cout << "Zero - Zero: "; check_result(zero - zero, "0");
+    cout << "Zero * Zero: "; check_result(zero * zero, "0");
+    cout << "One / One: "; check_result(one / one, "1");
+
+    // testing symmetric cases
+    cout << "\nTesting Symmetric Cases...\n";
+    inf_int sym("123456789");
+
+    cout << "sym + (-sym): "; check_result(sym + inf_int("-123456789"), "0");
+    cout << "sym - sym: "; check_result(sym - sym, "0");
+    cout << "sym * 1: "; check_result(sym * one, "123456789");
+    cout << "sym * -1: "; check_result(sym * neg_one, "-123456789");
+
+    // testing I/O operators
     cout << "\nTesting I/O Operators...\n";
-    inf_int p;
+    inf_int input_test;
     cout << "Enter a large integer: ";
-    cin >> p;
-    cout << "You entered: " << p << "\n";
+    cin >> input_test;
+    cout << "You entered: " << input_test << endl;
 
     return 0;
 }
