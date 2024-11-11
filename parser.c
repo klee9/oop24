@@ -50,9 +50,6 @@ void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
 
-// My variables
-int token;
-
 // My functions
 void addChar();
 void getChar();
@@ -268,9 +265,18 @@ void printToken(char *token){
 }
 
 // -----------------------------------------
-int nextToken(char *line) {
-    for (int i = 0; i < strlen(line) && line[i] != ' '; i++) {
-        
+int lookup (char ch) {
+    switch (ch) {
+        case '(' :
+            addChar();
+            nextToken = LPAREN;
+            break;
+        case ')' :
+        case '+' :
+        case '-' :
+        case '*' :
+        case '/' :
+        default :
     }
 }
 
