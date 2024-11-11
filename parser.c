@@ -50,6 +50,34 @@ void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
 
+// My variables
+int token;
+
+// My functions
+void addChar();
+void getChar();
+void getNonBlank();
+int lookup(char ch);
+int lex();
+
+void stmts();
+void stmt();
+void expr();
+void term();
+void term_tail();
+void factor();
+void factor_tail();
+
+// make these as tokens later
+void constant();
+void id();
+void assign_op();
+void semicolon();
+void add_op();
+void mult_op();
+void lparen();
+void rparen();
+
 /**
  *
  * @brief Main function for processing a file.
@@ -238,5 +266,60 @@ void printIdent(int num_ident) {
 void printToken(char *token){
     printf("%s\n", token);
 }
+
+// -----------------------------------------
+int nextToken(char *line) {
+    for (int i = 0; i < strlen(line) && line[i] != ' '; i++) {
+        
+    }
+}
+
+void term_tail() {
+    // Parse <add_op><term><term_tail> | epsilon
+    token = nextToken();
+
+    if (token == ADD_OP) {
+        term();
+        term_tail();
+    } 
+
+    if (token == EPS) {
+        // accept
+    }
+}
+
+void term() {
+    // Parse <factor><factor_tail>
+    factor();
+    factor_tail();
+}
+
+void factor_tail() {
+    // Parse <mult_op><factor><factor_tail> | epsilon
+    token = nextToken();
+
+    if (token == MULT_OP) {
+        factor();
+        factor_tail();
+    }
+
+    if (token == EPS) {
+        // accept
+    }
+}
+
+void factor() {
+    // Parse <left_paren><expression><right_paren> | <ident> | <const>
+    token = nextToken();
+
+    if (token == LPAREN)
+}
+
+
+
+
+
+
+
 
 
