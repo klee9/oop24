@@ -186,34 +186,50 @@ void parse(char *line) {
  * However, you SHOULD use the print functions below when you need to print some lines on screen,
  * or you might risk receiving 0 points even if the program works perfectly.
  */
-void parse_V() {
-    // TODO: Implement the parsing logic here for verbose output
+void parse_V(char *line) {
+    id_cnt = 0;
+    const_cnt = 0;
+    op_cnt = 0;
+
+    getChar();  // Initialize lexer by reading the first character
+    lexical();
+
+    // Verbose mode processing
+    while (next_token != EOF) {
+        printToken(lexeme);  // Output each token
+        lexical();  // Get next token
+    }
 }
 
 // Subprograms
 // <statements> → <statement> | <statement><semi_colon><statements>
-void statements() { 
+void statements() {
     statement();
     lexical();
     if (next_token == SEMICOLON) {
         lexical();
         statements();
+    } else if (next_token != EOF) {
+        printIDError("Unexpected token-- expected semicolon");  // Error handling for missing semicolon
     }
 }
 
 // <statement> → <ident><assignment_op><expression>
 void statement() {
-    lexical();
     if (next_token == ID) {
+        // Store identifier in symbol table
+        strcpy(idArray[id_cnt].name, lexeme);
+        
         lexical();
         if (next_token == ASSIGN_OP) {
             lexical();
             expression();
+            strcpy(idArray[id_cnt++].value, lexeme);  // Store expression result as identifier value
         } else {
-            // Handle error
+            printOPWarning(5);
         }
     } else {
-        // Handle error
+        printIDError("Undefined identifier in statement");  // Error handling for missing identifier
     }
 }
 
@@ -252,19 +268,17 @@ void factor_tail() {
 
 // <factor> → <left_paren><expression><right_paren> | <ident> | <const>
 void factor() {
-    lexical(); 
+    lexical();
     if (next_token == LPAREN) {
         expression();
         lexical();
         if (next_token != RPAREN) {
-            // Handle error
+            // maybe handle this as warning
+            printIDError("Missing closing parenthesis");
         }
-    } else if (next_token == ID) {  // Check for identifier
-        // Do nothing; we assume identifiers are valid at this stage
-    } else if (next_token == INT_LIT) {  // Check for constant (integer literal)
-        // Do nothing; constants are valid at this stage
-    } else {
-        // Handle error
+    } else if (next_token != ID && next_token != INT_LIT) {
+        // If the token is neither an identifier nor a constant, handle it as an error
+        printIDError("Unexpected token in factor");  
     }
 }
 
