@@ -35,12 +35,13 @@
 /* Token codes */
 #define INT_LIT 10
 #define ID 11
-#define ASSIGN_OP 20
-#define ADD_OP 21
-#define MULT_OP 22
-#define LPAREN 23
-#define RPAREN 24
-#define SEMICOLON 25
+#define CONSTANT 12
+#define ASSIGN_OP 13
+#define ADD_OP 14
+#define MULT_OP 15
+#define LPAREN 16
+#define RPAREN 17
+#define SEMICOLON 18
 
 /**
  * @brief Represents an identifier with a name and value.
@@ -59,6 +60,19 @@ char line[100];
 FILE *file;
 Ident idArray[50];
 
+int id_cnt = 0;
+int const_cnt = 0;
+int op_cnt = 0;
+
+// Lexer variables
+int char_class;
+char lexeme[100];
+char token_string[100];
+char next_char;
+int lex_len;
+int token;
+int next_token;
+
 void printResultByLine(char *line, int ID, int CON, int OP);
 void printIdent(int num_ident);
 void parse();
@@ -66,19 +80,11 @@ void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
 
-// Lexer variables
-int charClass;
-char lexeme[100];
-char nextChar;
-int lexLen;
-int token;
-int nextToken;
-
 // Lexer functions
 void addChar();
 void getChar();
 int lookup(char ch);
-int lex();
+int lexical();
 
 // Subprograms for recursive descent parsing
 void program();
@@ -89,16 +95,6 @@ void term_tail();
 void term();
 void factor_tail();
 void factor();
-
-// convert these to tokens
-void constant();
-void id();
-void assign_op();
-void semicolon();
-void add_op();
-void mult_op();
-void lparen();
-void rparen();
 
 /**
  *
@@ -153,13 +149,13 @@ int main(int argc, char **argv) {
     }
 
     // Gets input line for the first time
-    fgets(line, sizeof(line), file);
-
-    // Depending on the verbose flag, call the appropriate function
-    if (verbose) {
-        parse_V();
-    } else {
-        parse();
+    while(fgets(line, sizeof(line), file) != NULL) {
+        // Depending on the verbose flag, call the appropriate function
+        if (verbose) {
+            parse_V(line);
+        } else {
+            parse(line);
+        }   
     }
 
     fclose(file);
@@ -173,12 +169,14 @@ int main(int argc, char **argv) {
  * However, you SHOULD use the print functions below when you need to print some lines on screen,
  * or you might risk receiving 0 points even if the program works perfectly.
  */
-void parse() {
-    // handle error cases
-
-    // parse
-    stmts();
+void parse(char *line) {
+    id_cnt = 0;
+    const_cnt = 0;
+    op_cnt = 0;
     
+    lexical();
+    statements(); 
+    printResultByLine(line, id_cnt, const_cnt, op_cnt);
 }
 
 /**
@@ -193,30 +191,29 @@ void parse_V() {
 }
 
 // Subprograms
-// <program> → <statements>
-void program() {
-    statements();
-}
-
 // <statements> → <statement> | <statement><semi_colon><statements>
 void statements() { 
     statement();
-    lex();
-    if (nextToken == SEMICOLON) {
+    lexical();
+    if (next_token == SEMICOLON) {
+        lexical();
         statements();
-    } else {
-        // NOT ACCEPTED
     }
 }
 
 // <statement> → <ident><assignment_op><expression>
 void statement() {
-    lex();
-    if (nextToken == ID) {
-        lex();
-        if (nextToken == ASSIGN_OP) {
+    lexical();
+    if (next_token == ID) {
+        lexical();
+        if (next_token == ASSIGN_OP) {
+            lexical();
             expression();
+        } else {
+            // Handle error
         }
+    } else {
+        // Handle error
     }
 }
 
@@ -228,8 +225,9 @@ void expression() {
 
 // <term_tail> → <add_op><term><term_tail> | ε
 void term_tail() {
-    lex();
-    if (nextToken == ADD_OP) {
+    lexical();
+    if (next_token == ADD_OP) {
+        lexical();
         term();
         term_tail();
     }
@@ -243,27 +241,30 @@ void term() {
 
 // <factor_tail> → <mult_op><factor><factor_tail> | ε
 void factor_tail() {
-    lex();
-    if (nextToken == MULT_OP) {
+    lexical();
+    if (next_token == MULT_OP) {
+        lexical();
         factor();
         factor_tail();
-    } else {
-        // NOT ACCEPTED
     }
+    // Do nothing if no mult_op(ε production)
 }
 
 // <factor> → <left_paren><expression><right_paren> | <ident> | <const>
 void factor() {
-    lex();
-    if (nextToken == LPAREN) {
+    lexical(); 
+    if (next_token == LPAREN) {
         expression();
-        lex();
-        if (nextToken != RPAREN) {
-            // NOT ACCEPTED
+        lexical();
+        if (next_token != RPAREN) {
+            // Handle error
         }
-    }
-    else if (nextToken != ID || nextToken != DIGIT) {
-        // NOT ACCEPTED
+    } else if (next_token == ID) {  // Check for identifier
+        // Do nothing; we assume identifiers are valid at this stage
+    } else if (next_token == INT_LIT) {  // Check for constant (integer literal)
+        // Do nothing; constants are valid at this stage
+    } else {
+        // Handle error
     }
 }
 
@@ -377,41 +378,34 @@ void printToken(char *token){
  */
 int lookup (char *s) {
     addChar();
-    switch (s) {
-    case ":=" :
-        nextToken = ASSIGN_OP;
-        break;
-    case "(" :
-        nextToken = LPAREN;
-        break;
-    case ")" :
-        nextToken = RPAREN;
-        break;
-    case "+" :
-    case "-":
-        nextToken = ADD_OP;
-        break;
-    case "*" :
-    case "/" :
-        nextToken = MULT_OP;
-        break;
-    case ";" :
-        nextToken = SEMICOLON;
-        break;
-    default :
-        nextToken = EOF;
-        break;
+    if(!strcmp(s, ":=")) {
+        next_token = ASSIGN_OP;
     }
-    return nextToken;
+    else if(!strcmp(s, "(")) {
+        next_token = LPAREN;
+    }
+    else if(!strcmp(s, "+") || !strcmp(s, "-")) {
+        next_token = ADD_OP;
+    }
+    else if(!strcmp(s, "*") || !strcmp(s, "/")) {
+        next_token = MULT_OP;
+    }
+    else if(!strcmp(s, ";")) {
+        next_token = SEMICOLON;
+    }
+    else {
+        next_token = EOF;
+    }
+    return next_token;
 }
 
 /**
  * @brief Function to add nextChar to lexeme 
  */
 void addChar() {
-    if (lexLen <= 98) {
-        lexeme[lexLen++] = nextChar;
-        lexeme[lexLen] = 0;
+    if (lex_len <= 98) {
+        lexeme[lex_len++] = next_char;
+        lexeme[lex_len] = 0;
     }
 }
 
@@ -419,68 +413,71 @@ void addChar() {
  * @brief Function to get the next character of input and determine its character class 
  */
 void getChar() {
-    if ((nextChar = getc(in_fp)) !=EOF) {
-        if (isalpha(nextChar))
-            charClass = LETTER;
-        else if (isdigit(nextChar))
-                charClass = DIGIT;
-        else charClass = UNKNOWN;
+    if ((next_char = getc(file)) != EOF) {
+        if (isalpha(next_char))
+            char_class = LETTER;
+        else if (isdigit(next_char))
+            char_class = DIGIT;
+        else 
+            char_class = UNKNOWN;
     } else {
-        charClass = EOF;
+        char_class = EOF;
     }
 }
 
 /**
  * @brief Function for lexer for arithmetic expressions
  */
-int lex() {
-    lexLen = 0;
-    
-    while (isspace(nextChar)) {
+int lexical() {
+    lex_len = 0;
+
+    while (isspace(next_char)) {
         getChar();
     }
-    
-    switch (charClass) {
+
+    switch (char_class) {
     
     // Parse identifiers
     case LETTER:
         addChar();
         getChar();
-        while (charClass == LETTER || charClass == DIGIT) {
+        while (char_class == LETTER || char_class == DIGIT) {
             addChar(); 
             getChar();
         }
-        nextToken = IDENT;
+        next_token = ID;
+        id_cnt++;
         break;
 
     // Parse integer literals
     case DIGIT:
         addChar();
         getChar();
-        while (charClass == DIGIT) {
+        while (char_class == DIGIT) {
             addChar(); 
             getChar();
         }
-        nextToken = INT_LIT;
+        next_token = CONSTANT;
+        const_cnt++;
         break;
 
     // Parentheses and operators
     case UNKNOWN:
-        lookup(nextChar);
+        lookup(lexeme);
         getChar();
+        if (next_token == ADD_OP || next_token == MULT_OP) {
+            op_cnt++;
+        }
         break;
 
     // EOF
     case EOF:
-        nextToken = EOF;
-        lexeme[0] = 'E';
-        lexeme[1] = 'O';
-        lexeme[2] = 'F';
-        lexeme[3] = 0;
+        next_token = EOF;
+        strcpy(lexeme, "EOF");
         break;
     }
-    printf("Next Token is : %d, Next lexeme is %s\n", nextToken, lexeme);
-    return nextToken;
+
+    return next_token;
 }
 
 
