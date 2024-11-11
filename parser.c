@@ -50,6 +50,9 @@ void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
 
+// My variables
+
+
 // My functions
 void addChar();
 void getChar();
