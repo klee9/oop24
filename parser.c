@@ -24,7 +24,23 @@
  */
 
 #include <stdio.h>
-#include <string.h>  // Consider adding string.h for strcmp
+#include <string.h>
+#include <ctype.h>
+
+/* Character classes */
+#define LETTER 0
+#define DIGIT 1
+#define UNKNOWN 99
+
+/* Token codes */
+#define INT_LIT 10
+#define ID 11
+#define ASSIGN_OP 20
+#define ADD_OP 21
+#define MULT_OP 22
+#define LPAREN 23
+#define RPAREN 24
+#define SEMICOLON 25
 
 /**
  * @brief Represents an identifier with a name and value.
@@ -50,25 +66,31 @@ void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
 
-// My variables
+// Lexer variables
+int charClass;
+char lexeme[100];
+char nextChar;
+int lexLen;
+int token;
+int nextToken;
 
-
-// My functions
+// Lexer functions
 void addChar();
 void getChar();
-void getNonBlank();
 int lookup(char ch);
 int lex();
 
-void stmts();
-void stmt();
-void expr();
-void term();
+// Subprograms for recursive descent parsing
+void program();
+void statements();
+void statement();
+void expression();
 void term_tail();
-void factor();
+void term();
 void factor_tail();
+void factor();
 
-// make these as tokens later
+// convert these to tokens
 void constant();
 void id();
 void assign_op();
@@ -152,7 +174,11 @@ int main(int argc, char **argv) {
  * or you might risk receiving 0 points even if the program works perfectly.
  */
 void parse() {
-    // TODO: Implement the parsing logic here
+    // handle error cases
+
+    // parse
+    stmts();
+    
 }
 
 /**
@@ -164,6 +190,81 @@ void parse() {
  */
 void parse_V() {
     // TODO: Implement the parsing logic here for verbose output
+}
+
+// Subprograms
+// <program> → <statements>
+void program() {
+    statements();
+}
+
+// <statements> → <statement> | <statement><semi_colon><statements>
+void statements() { 
+    statement();
+    lex();
+    if (nextToken == SEMICOLON) {
+        statements();
+    } else {
+        // NOT ACCEPTED
+    }
+}
+
+// <statement> → <ident><assignment_op><expression>
+void statement() {
+    lex();
+    if (nextToken == ID) {
+        lex();
+        if (nextToken == ASSIGN_OP) {
+            expression();
+        }
+    }
+}
+
+// <expression> → <term><term_tail>
+void expression() {
+    term();
+    term_tail();
+}
+
+// <term_tail> → <add_op><term><term_tail> | ε
+void term_tail() {
+    lex();
+    if (nextToken == ADD_OP) {
+        term();
+        term_tail();
+    }
+}
+
+// <term> → <factor> <factor_tail>
+void term() {
+    factor();
+    factor_tail();
+}
+
+// <factor_tail> → <mult_op><factor><factor_tail> | ε
+void factor_tail() {
+    lex();
+    if (nextToken == MULT_OP) {
+        factor();
+        factor_tail();
+    } else {
+        // NOT ACCEPTED
+    }
+}
+
+// <factor> → <left_paren><expression><right_paren> | <ident> | <const>
+void factor() {
+    lex();
+    if (nextToken == LPAREN) {
+        expression();
+        lex();
+        if (nextToken != RPAREN) {
+            // NOT ACCEPTED
+        }
+    }
+    else if (nextToken != ID || nextToken != DIGIT) {
+        // NOT ACCEPTED
+    }
 }
 
 /**
@@ -267,63 +368,120 @@ void printToken(char *token){
     printf("%s\n", token);
 }
 
-// -----------------------------------------
-int lookup (char ch) {
-    switch (ch) {
-        case '(' :
-            addChar();
-            nextToken = LPAREN;
-            break;
-        case ')' :
-        case '+' :
-        case '-' :
-        case '*' :
-        case '/' :
-        default :
+// Below functions are for lexer
+
+/**
+ * @brief Function to lookup operators and parentheses and return the token
+ *
+ * @param s String to be classified
+ */
+int lookup (char *s) {
+    addChar();
+    switch (s) {
+    case ":=" :
+        nextToken = ASSIGN_OP;
+        break;
+    case "(" :
+        nextToken = LPAREN;
+        break;
+    case ")" :
+        nextToken = RPAREN;
+        break;
+    case "+" :
+    case "-":
+        nextToken = ADD_OP;
+        break;
+    case "*" :
+    case "/" :
+        nextToken = MULT_OP;
+        break;
+    case ";" :
+        nextToken = SEMICOLON;
+        break;
+    default :
+        nextToken = EOF;
+        break;
+    }
+    return nextToken;
+}
+
+/**
+ * @brief Function to add nextChar to lexeme 
+ */
+void addChar() {
+    if (lexLen <= 98) {
+        lexeme[lexLen++] = nextChar;
+        lexeme[lexLen] = 0;
     }
 }
 
-void term_tail() {
-    // Parse <add_op><term><term_tail> | epsilon
-    token = nextToken();
-
-    if (token == ADD_OP) {
-        term();
-        term_tail();
-    } 
-
-    if (token == EPS) {
-        // accept
+/**
+ * @brief Function to get the next character of input and determine its character class 
+ */
+void getChar() {
+    if ((nextChar = getc(in_fp)) !=EOF) {
+        if (isalpha(nextChar))
+            charClass = LETTER;
+        else if (isdigit(nextChar))
+                charClass = DIGIT;
+        else charClass = UNKNOWN;
+    } else {
+        charClass = EOF;
     }
 }
 
-void term() {
-    // Parse <factor><factor_tail>
-    factor();
-    factor_tail();
-}
-
-void factor_tail() {
-    // Parse <mult_op><factor><factor_tail> | epsilon
-    token = nextToken();
-
-    if (token == MULT_OP) {
-        factor();
-        factor_tail();
+/**
+ * @brief Function for lexer for arithmetic expressions
+ */
+int lex() {
+    lexLen = 0;
+    
+    while (isspace(nextChar)) {
+        getChar();
     }
+    
+    switch (charClass) {
+    
+    // Parse identifiers
+    case LETTER:
+        addChar();
+        getChar();
+        while (charClass == LETTER || charClass == DIGIT) {
+            addChar(); 
+            getChar();
+        }
+        nextToken = IDENT;
+        break;
 
-    if (token == EPS) {
-        // accept
+    // Parse integer literals
+    case DIGIT:
+        addChar();
+        getChar();
+        while (charClass == DIGIT) {
+            addChar(); 
+            getChar();
+        }
+        nextToken = INT_LIT;
+        break;
+
+    // Parentheses and operators
+    case UNKNOWN:
+        lookup(nextChar);
+        getChar();
+        break;
+
+    // EOF
+    case EOF:
+        nextToken = EOF;
+        lexeme[0] = 'E';
+        lexeme[1] = 'O';
+        lexeme[2] = 'F';
+        lexeme[3] = 0;
+        break;
     }
+    printf("Next Token is : %d, Next lexeme is %s\n", nextToken, lexeme);
+    return nextToken;
 }
-
-void factor() {
-    // Parse <left_paren><expression><right_paren> | <ident> | <const>
-    token = nextToken();
-
-    if (token == LPAREN)
-}
-
 
 
 
