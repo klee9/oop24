@@ -66,6 +66,7 @@ int op_cnt = 0;
 
 // Lexer variables
 int char_class;
+int line_pos = 0;
 char lexeme[100];
 char token_string[100];
 char next_char = ' ';
@@ -82,7 +83,7 @@ void printIDError(char *name);
 
 // Lexer functions
 void addChar();
-void getChar();
+void getChar(char *line);
 int lookup(char *ch);
 int lexical();
 
@@ -173,6 +174,7 @@ void parse(char *line) {
     id_cnt = 0;
     const_cnt = 0;
     op_cnt = 0;
+    line_pos = 0;
     
     lexical();
     statements();
@@ -425,8 +427,9 @@ void addChar() {
 /**
  * @brief Function to get the next character of input and determine its character class
  */
-void getChar() {
-    if ((next_char = getc(file)) != EOF) {
+void getChar(char *line) {
+    if (line[line_pos] != NULL) {
+        next_char = line[line_pos++];
         if (isalpha(next_char))
             char_class = LETTER;
         else if (isdigit(next_char))
