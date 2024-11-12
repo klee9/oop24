@@ -30,6 +30,7 @@
 // Character classes
 #define LETTER 0
 #define DIGIT 1
+#define ERROR 2
 #define UNKNOWN 99
 
 // Token codes
@@ -186,7 +187,11 @@ void parse(char *line) {
  * or you might risk receiving 0 points even if the program works perfectly.
  */
 void parse_V(char *line) {
+    id_cnt = 0;
+    const_cnt = 0;
+    op_cnt = 0;
     
+    // do smth
 }
 
 // Subprograms
@@ -438,6 +443,7 @@ void getChar() {
  */
 int lexical() {
     lex_len = 0;
+    next_token = ERROR;
     
     // Read until first non blank char
     while (isspace(next_char)) { getChar(); }
@@ -470,8 +476,17 @@ int lexical() {
     
         // Parentheses and operators
         case UNKNOWN:
-            next_token = lookup(lexeme);
+            addChar();
             getChar();
+            
+            if (lexeme[0] == ':' && next_char == '=') {
+                addChar();
+                getChar();
+                next_token = ASSIGN_OP;
+            } else {
+                next_token = lookup(lexeme);
+            }
+            
             if (next_token == ADD_OP || next_token == MULT_OP) {
                 op_cnt++;
             }
@@ -484,5 +499,8 @@ int lexical() {
             break;
     }
     printf("Got: %s\n", lexeme);
+    if (next_token == ERROR) {
+        
+    }
     return next_token;
 }
