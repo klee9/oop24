@@ -446,17 +446,14 @@ void getChar(char *line) {
  */
 int lexical() {
     lex_len = 0;
-    next_token = ERROR;
+    next_token = ERROR; 
     
     // Read until first non blank char
     while (isspace(next_char)) { getChar(); }
 
     switch (char_class) {
         // Parse identifiers
-        // &@194& := 192
         case LETTER:
-            addChar();
-            getChar();
             while (char_class == LETTER || char_class == DIGIT) {
                 addChar();
                 getChar();
@@ -465,10 +462,8 @@ int lexical() {
             id_cnt++;
             break;
     
-        // Parse integer literals (constants)
+        // Integer literals (constants)
         case DIGIT:
-            addChar();
-            getChar();
             while (char_class == DIGIT) {
                 addChar();
                 getChar();
@@ -479,13 +474,10 @@ int lexical() {
     
         // Parentheses and operators
         case UNKNOWN:
-            addChar();
-            getChar();
-            
-            if (lexeme[0] == ':' && next_char == '=') {
-                addChar();
+            if (next_char == ':') {
                 getChar();
-                next_token = ASSIGN_OP;
+                if (next_char == '=') 
+                    next_token = ASSIGN_OP;
             } else {
                 next_token = lookup(lexeme);
             }
