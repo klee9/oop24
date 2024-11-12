@@ -34,7 +34,7 @@
 
 /* Token codes */
 #define INT_LIT 10
-#define ID 11
+#define IDENTIFIER 11
 #define CONSTANT 12
 #define ASSIGN_OP 13
 #define ADD_OP 14
@@ -75,15 +75,15 @@ int next_token;
 
 void printResultByLine(char *line, int ID, int CON, int OP);
 void printIdent(int num_ident);
-void parse();
-void parse_V();
+void parse(char *line);
+void parse_V(char *line);
 void printOPWarning(int code);
 void printIDError(char *name);
 
 // Lexer functions
 void addChar();
 void getChar();
-int lookup(char ch);
+int lookup(char *ch);
 int lexical();
 
 // Subprograms for recursive descent parsing
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
             parse_V(line);
         } else {
             parse(line);
-        }   
+        }
     }
 
     fclose(file);
@@ -174,8 +174,9 @@ void parse(char *line) {
     const_cnt = 0;
     op_cnt = 0;
     
+    getChar() // get the first char to start.
     lexical();
-    statements(); 
+    statements();
     printResultByLine(line, id_cnt, const_cnt, op_cnt);
 }
 
@@ -187,36 +188,27 @@ void parse(char *line) {
  * or you might risk receiving 0 points even if the program works perfectly.
  */
 void parse_V(char *line) {
-    id_cnt = 0;
-    const_cnt = 0;
-    op_cnt = 0;
-
-    getChar();  // Initialize lexer by reading the first character
-    lexical();
-
-    // Verbose mode processing
-    while (next_token != EOF) {
-        printToken(lexeme);  // Output each token
-        lexical();  // Get next token
-    }
+    
 }
 
 // Subprograms
 // <statements> → <statement> | <statement><semi_colon><statements>
 void statements() {
+    printf("Enter statements()\n");
     statement();
     lexical();
     if (next_token == SEMICOLON) {
         lexical();
         statements();
     } else if (next_token != EOF) {
-        printIDError("Unexpected token-- expected semicolon");  // Error handling for missing semicolon
+        //printIDError("Unexpected token-- expected semicolon");  // Error handling for missing semicolon
     }
 }
 
 // <statement> → <ident><assignment_op><expression>
 void statement() {
-    if (next_token == ID) {
+    printf("Enter statement()\n");
+    if (next_token == IDENTIFIER) {
         // Store identifier in symbol table
         strcpy(idArray[id_cnt].name, lexeme);
         
@@ -226,21 +218,23 @@ void statement() {
             expression();
             strcpy(idArray[id_cnt++].value, lexeme);  // Store expression result as identifier value
         } else {
-            printOPWarning(5);
+            //printOPWarning(5);
         }
     } else {
-        printIDError("Undefined identifier in statement");  // Error handling for missing identifier
+        //printIDError("Undefined identifier in statement");  // Error handling for missing identifier
     }
 }
 
 // <expression> → <term><term_tail>
 void expression() {
+    printf("Enter expression()\n");
     term();
     term_tail();
 }
 
 // <term_tail> → <add_op><term><term_tail> | ε
 void term_tail() {
+    printf("Enter term_tail()\n");
     lexical();
     if (next_token == ADD_OP) {
         lexical();
@@ -251,12 +245,14 @@ void term_tail() {
 
 // <term> → <factor> <factor_tail>
 void term() {
+    printf("Enter term()\n");
     factor();
     factor_tail();
 }
 
 // <factor_tail> → <mult_op><factor><factor_tail> | ε
 void factor_tail() {
+    printf("Enter factor_tail()\n");
     lexical();
     if (next_token == MULT_OP) {
         lexical();
@@ -268,17 +264,18 @@ void factor_tail() {
 
 // <factor> → <left_paren><expression><right_paren> | <ident> | <const>
 void factor() {
+    printf("Enter factor()\n");
     lexical();
     if (next_token == LPAREN) {
         expression();
         lexical();
         if (next_token != RPAREN) {
             // maybe handle this as warning
-            printIDError("Missing closing parenthesis");
+            //printIDError("Missing closing parenthesis");
         }
-    } else if (next_token != ID && next_token != INT_LIT) {
+    } else if (next_token != IDENTIFIER && next_token != INT_LIT) {
         // If the token is neither an identifier nor a constant, handle it as an error
-        printIDError("Unexpected token in factor");  
+        //printIDError("Unexpected token in factor");
     }
 }
 
@@ -414,7 +411,7 @@ int lookup (char *s) {
 }
 
 /**
- * @brief Function to add nextChar to lexeme 
+ * @brief Function to add nextChar to lexeme
  */
 void addChar() {
     if (lex_len <= 98) {
@@ -424,7 +421,7 @@ void addChar() {
 }
 
 /**
- * @brief Function to get the next character of input and determine its character class 
+ * @brief Function to get the next character of input and determine its character class
  */
 void getChar() {
     if ((next_char = getc(file)) != EOF) {
@@ -432,7 +429,7 @@ void getChar() {
             char_class = LETTER;
         else if (isdigit(next_char))
             char_class = DIGIT;
-        else 
+        else
             char_class = UNKNOWN;
     } else {
         char_class = EOF;
@@ -444,7 +441,7 @@ void getChar() {
  */
 int lexical() {
     lex_len = 0;
-
+    
     while (isspace(next_char)) {
         getChar();
     }
@@ -452,23 +449,33 @@ int lexical() {
     switch (char_class) {
     
     // Parse identifiers
+            /*
+             #define IDENTIFIER 11 ok
+             #define CONSTANT 12 ok
+             #define ASSIGN_OP 13
+             #define ADD_OP 14
+             #define MULT_OP 15
+             #define LPAREN 16
+             #define RPAREN 17
+             #define SEMICOLON 18
+             */
     case LETTER:
         addChar();
         getChar();
         while (char_class == LETTER || char_class == DIGIT) {
-            addChar(); 
+            addChar();
             getChar();
         }
-        next_token = ID;
+        next_token = IDENTIFIER;
         id_cnt++;
         break;
 
-    // Parse integer literals
+    // Parse integer literals (constants)
     case DIGIT:
         addChar();
         getChar();
         while (char_class == DIGIT) {
-            addChar(); 
+            addChar();
             getChar();
         }
         next_token = CONSTANT;
@@ -477,7 +484,7 @@ int lexical() {
 
     // Parentheses and operators
     case UNKNOWN:
-        lookup(lexeme);
+        next_token = lookup(lexeme);
         getChar();
         if (next_token == ADD_OP || next_token == MULT_OP) {
             op_cnt++;
@@ -490,14 +497,6 @@ int lexical() {
         strcpy(lexeme, "EOF");
         break;
     }
-
+    printf("Got: %s\n", lexeme);
     return next_token;
 }
-
-
-
-
-
-
-
-
