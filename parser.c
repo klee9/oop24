@@ -27,13 +27,12 @@
 #include <string.h>
 #include <ctype.h>
 
-/* Character classes */
+// Character classes
 #define LETTER 0
 #define DIGIT 1
 #define UNKNOWN 99
 
-/* Token codes */
-#define INT_LIT 10
+// Token codes
 #define IDENTIFIER 11
 #define CONSTANT 12
 #define ASSIGN_OP 13
@@ -68,7 +67,7 @@ int op_cnt = 0;
 int char_class;
 char lexeme[100];
 char token_string[100];
-char next_char;
+char next_char = ' ';
 int lex_len;
 int token;
 int next_token;
@@ -174,7 +173,6 @@ void parse(char *line) {
     const_cnt = 0;
     op_cnt = 0;
     
-    getChar() // get the first char to start.
     lexical();
     statements();
     printResultByLine(line, id_cnt, const_cnt, op_cnt);
@@ -388,7 +386,6 @@ void printToken(char *token){
  * @param s String to be classified
  */
 int lookup (char *s) {
-    addChar();
     if(!strcmp(s, ":=")) {
         next_token = ASSIGN_OP;
     }
@@ -411,12 +408,12 @@ int lookup (char *s) {
 }
 
 /**
- * @brief Function to add nextChar to lexeme
+ * @brief Function to add next_char to lexeme
  */
 void addChar() {
     if (lex_len <= 98) {
         lexeme[lex_len++] = next_char;
-        lexeme[lex_len] = 0;
+        lexeme[lex_len] = '\0'
     }
 }
 
@@ -442,60 +439,49 @@ void getChar() {
 int lexical() {
     lex_len = 0;
     
-    while (isspace(next_char)) {
-        getChar();
-    }
+    // Read until first non blank char
+    while (isspace(next_char)) { getChar(); }
 
     switch (char_class) {
+        // Parse identifiers
+        // &@194& := 192
+        case LETTER:
+            addChar();
+            getChar();
+            while (char_class == LETTER || char_class == DIGIT) {
+                addChar();
+                getChar();
+            }
+            next_token = IDENTIFIER;
+            id_cnt++;
+            break;
     
-    // Parse identifiers
-            /*
-             #define IDENTIFIER 11 ok
-             #define CONSTANT 12 ok
-             #define ASSIGN_OP 13
-             #define ADD_OP 14
-             #define MULT_OP 15
-             #define LPAREN 16
-             #define RPAREN 17
-             #define SEMICOLON 18
-             */
-    case LETTER:
-        addChar();
-        getChar();
-        while (char_class == LETTER || char_class == DIGIT) {
+        // Parse integer literals (constants)
+        case DIGIT:
             addChar();
             getChar();
-        }
-        next_token = IDENTIFIER;
-        id_cnt++;
-        break;
-
-    // Parse integer literals (constants)
-    case DIGIT:
-        addChar();
-        getChar();
-        while (char_class == DIGIT) {
-            addChar();
+            while (char_class == DIGIT) {
+                addChar();
+                getChar();
+            }
+            next_token = CONSTANT;
+            const_cnt++;
+            break;
+    
+        // Parentheses and operators
+        case UNKNOWN:
+            next_token = lookup(lexeme);
             getChar();
-        }
-        next_token = CONSTANT;
-        const_cnt++;
-        break;
-
-    // Parentheses and operators
-    case UNKNOWN:
-        next_token = lookup(lexeme);
-        getChar();
-        if (next_token == ADD_OP || next_token == MULT_OP) {
-            op_cnt++;
-        }
-        break;
-
-    // EOF
-    case EOF:
-        next_token = EOF;
-        strcpy(lexeme, "EOF");
-        break;
+            if (next_token == ADD_OP || next_token == MULT_OP) {
+                op_cnt++;
+            }
+            break;
+    
+        // EOF
+        case EOF:
+            next_token = EOF;
+            strcpy(lexeme, "EOF");
+            break;
     }
     printf("Got: %s\n", lexeme);
     return next_token;
