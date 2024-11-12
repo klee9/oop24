@@ -27,22 +27,6 @@
 #include <string.h>
 #include <ctype.h>
 
-// Character classes
-#define LETTER 0
-#define DIGIT 1
-#define ERROR 2
-#define UNKNOWN 99
-
-// Token codes
-#define IDENTIFIER 11
-#define CONSTANT 12
-#define ASSIGN_OP 13
-#define ADD_OP 14
-#define MULT_OP 15
-#define LPAREN 16
-#define RPAREN 17
-#define SEMICOLON 18
-
 /**
  * @brief Represents an identifier with a name and value.
  *
@@ -52,50 +36,29 @@
  * You can add more fields if you want but DO NOT MODIFY predefined fields
  */
 typedef struct {
-    char name[50];
-    char value[100];
+	char name[50];
+	char value[100];
 }Ident;
+
+typedef enum {
+    ASSIGN, ADD, MULT, SEMICOLON, IDENT, INT_LIT, END_OF_FILE, UNKNOWN
+} TokenType;
+
+typedef struct {
+    TokenType type;
+    char lexeme[100];
+} Token;
 
 char line[100];
 FILE *file;
 Ident idArray[50];
 
-int id_cnt = 0;
-int const_cnt = 0;
-int op_cnt = 0;
-
-// Lexer variables
-int char_class;
-int line_pos = 0;
-char lexeme[100];
-char token_string[100];
-char next_char = ' ';
-int lex_len;
-int token;
-int next_token;
-
 void printResultByLine(char *line, int ID, int CON, int OP);
 void printIdent(int num_ident);
-void parse(char *line);
-void parse_V(char *line);
+void parse();
+void parse_V();
 void printOPWarning(int code);
 void printIDError(char *name);
-
-// Lexer functions
-void addChar();
-void getChar(char *line);
-int lookup(char *ch);
-int lexical();
-
-// Subprograms for recursive descent parsing
-void program();
-void statements();
-void statement();
-void expression();
-void term_tail();
-void term();
-void factor_tail();
-void factor();
 
 /**
  *
@@ -117,7 +80,7 @@ void factor();
  *
  * Make sure that the file exists at the specified path, and that you have the
  * correct permissions to read the file.
- *
+ * 
  *
  *
  */
@@ -150,13 +113,13 @@ int main(int argc, char **argv) {
     }
 
     // Gets input line for the first time
-    while(fgets(line, sizeof(line), file) != NULL) {
-        // Depending on the verbose flag, call the appropriate function
-        if (verbose) {
-            parse_V(line);
-        } else {
-            parse(line);
-        }
+    fgets(line, sizeof(line), file);
+
+    // Depending on the verbose flag, call the appropriate function
+    if (verbose) {
+        parse_V();
+    } else {
+        parse();
     }
 
     fclose(file);
@@ -170,15 +133,8 @@ int main(int argc, char **argv) {
  * However, you SHOULD use the print functions below when you need to print some lines on screen,
  * or you might risk receiving 0 points even if the program works perfectly.
  */
-void parse(char *line) {
-    id_cnt = 0;
-    const_cnt = 0;
-    op_cnt = 0;
-    line_pos = 0;
-    
-    lexical();
-    statements();
-    printResultByLine(line, id_cnt, const_cnt, op_cnt);
+void parse() {
+    // TODO: Implement the parsing logic here
 }
 
 /**
@@ -188,100 +144,8 @@ void parse(char *line) {
  * However, you SHOULD use the print functions below when you need to print some lines on screen,
  * or you might risk receiving 0 points even if the program works perfectly.
  */
-void parse_V(char *line) {
-    id_cnt = 0;
-    const_cnt = 0;
-    op_cnt = 0;
-    
-    // do smth
-}
-
-// Subprograms
-// <statements> → <statement> | <statement><semi_colon><statements>
-void statements() {
-    printf("Enter statements()\n");
-    statement();
-    lexical();
-    if (next_token == SEMICOLON) {
-        lexical();
-        statements();
-    } else if (next_token != EOF) {
-        //printIDError("Unexpected token-- expected semicolon");  // Error handling for missing semicolon
-    }
-}
-
-// <statement> → <ident><assignment_op><expression>
-void statement() {
-    printf("Enter statement()\n");
-    if (next_token == IDENTIFIER) {
-        // Store identifier in symbol table
-        strcpy(idArray[id_cnt].name, lexeme);
-        
-        lexical();
-        if (next_token == ASSIGN_OP) {
-            lexical();
-            expression();
-            strcpy(idArray[id_cnt++].value, lexeme);  // Store expression result as identifier value
-        } else {
-            //printOPWarning(5);
-        }
-    } else {
-        //printIDError("Undefined identifier in statement");  // Error handling for missing identifier
-    }
-}
-
-// <expression> → <term><term_tail>
-void expression() {
-    printf("Enter expression()\n");
-    term();
-    term_tail();
-}
-
-// <term_tail> → <add_op><term><term_tail> | ε
-void term_tail() {
-    printf("Enter term_tail()\n");
-    lexical();
-    if (next_token == ADD_OP) {
-        lexical();
-        term();
-        term_tail();
-    }
-}
-
-// <term> → <factor> <factor_tail>
-void term() {
-    printf("Enter term()\n");
-    factor();
-    factor_tail();
-}
-
-// <factor_tail> → <mult_op><factor><factor_tail> | ε
-void factor_tail() {
-    printf("Enter factor_tail()\n");
-    lexical();
-    if (next_token == MULT_OP) {
-        lexical();
-        factor();
-        factor_tail();
-    }
-    // Do nothing if no mult_op(ε production)
-}
-
-// <factor> → <left_paren><expression><right_paren> | <ident> | <const>
-void factor() {
-    printf("Enter factor()\n");
-    lexical();
-    if (next_token == LPAREN) {
-        expression();
-        lexical();
-        if (next_token != RPAREN) {
-            // maybe handle this as warning
-            //printIDError("Missing closing parenthesis");
-        }
-    } else if (next_token != IDENTIFIER && next_token != INT_LIT) {
-        // If the token is neither an identifier nor a constant, handle it as an error
-        //printIDError("Unexpected token in factor");
-    }
+void parse_V() {
+    // TODO: Implement the parsing logic here for verbose output
 }
 
 /**
@@ -313,31 +177,31 @@ void printResultByLine(char *line, int ID, int CON, int OP) {
  * 5 : Wrong Assignment Operation (:=)
  */
 void printOPWarning(int code){
-    switch(code){
-    
-        case 1:
-            printf("(Warning) \"Eliminating duplicate operator (+)\"\n");
-            break;
-        case 2:
-            printf("(Warning) \"Eliminating duplicate operator (-)\"\n");
-            break;
-        case 3:
-            printf("(Warning) \"Eliminating duplicate operator (*)\"\n");
-            break;
-        case 4:
-            printf("(Warning) \"Eliminating duplicate operator (/)\"\n");
-            break;
-        case 5:
-            printf("(Warning) \"Substituting assignment operator (:=)\"\n");
-            break;
-        }
+	switch(code){
+	
+    	case 1:
+    		printf("(Warning) \"Eliminating duplicate operator (+)\"\n");
+    		break;
+    	case 2:
+    		printf("(Warning) \"Eliminating duplicate operator (-)\"\n");
+    		break;
+    	case 3:
+    		printf("(Warning) \"Eliminating duplicate operator (*)\"\n");
+    		break;
+    	case 4:
+    		printf("(Warning) \"Eliminating duplicate operator (/)\"\n");
+    		break;
+    	case 5:
+    		printf("(Warning) \"Substituting assignment operator (:=)\"\n"); 
+    		break;
+    	}
 }
 /**
  * @brief Function that prints OK sign
  *
  */
 void printOK(){
-    printf("(OK)\n");
+	printf("(OK)\n");
 }
 
 /**
@@ -349,7 +213,7 @@ void printOK(){
  * @param name The name of Identifier that didn't referenced before
  */
 void printIDError(char *name){
-    printf("(Error) \"referring to undefined identifiers(%s)\"\n",name);
+	printf("(Error) \"referring to undefined identifiers(%s)\"\n",name);
 }
 
 /**
@@ -360,7 +224,7 @@ void printIDError(char *name){
  *
  * Save identifiers in predefined array
  * @param num_ident The number of identifiers.
- *
+ * 
  * Result ==> operand1: 2; total: 2;
  */
 void printIdent(int num_ident) {
@@ -382,120 +246,152 @@ void printIdent(int num_ident) {
  *
  */
 void printToken(char *token){
-    printf("%s\n", token);
+	printf("%s\n", token);
 }
 
-// Below functions are for lexer
 
-/**
- * @brief Function to lookup operators and parentheses and return the token
- *
- * @param s String to be classified
- */
-int lookup (char *s) {
-    if(!strcmp(s, ":=")) {
-        next_token = ASSIGN_OP;
-    }
-    else if(!strcmp(s, "(")) {
-        next_token = LPAREN;
-    }
-    else if(!strcmp(s, "+") || !strcmp(s, "-")) {
-        next_token = ADD_OP;
-    }
-    else if(!strcmp(s, "*") || !strcmp(s, "/")) {
-        next_token = MULT_OP;
-    }
-    else if(!strcmp(s, ";")) {
-        next_token = SEMICOLON;
-    }
-    else {
-        next_token = EOF;
-    }
-    return next_token;
+
+
+
+
+
+
+
+
+
+
+// Lexer variables
+const char *input;
+int pos = 0;
+char current_char;
+
+// Function prototypes
+void advance();
+Token getNextToken();
+Token identifier();
+Token integerLiteral();
+Token createToken(TokenType type, const char *lexeme);
+
+int main() {
+    input = "var1 := [] 5 + 3 * (var2 - 4);";
+    advance();
+
+    Token token;
+    do {
+        token = getNextToken();
+        printf("Token(Type: %d, Lexeme: \"%s\")\n", token.type, token.lexeme);
+    } while (token.type != END_OF_FILE);
+
+    return 0;
 }
 
-/**
- * @brief Function to add next_char to lexeme
- */
-void addChar() {
-    if (lex_len <= 98) {
-        lexeme[lex_len++] = next_char;
-        lexeme[lex_len] = '\0'
+// Advance to the next character in the input
+void advance() {
+    current_char = input[pos++];
+}
+
+// Create a new token
+Token createToken(TokenType type, const char *lexeme) {
+    Token token;
+    token.type = type;
+    strncpy(token.lexeme, lexeme, sizeof(token.lexeme) - 1);
+    token.lexeme[sizeof(token.lexeme) - 1] = '\0'; // Ensure null-termination
+    return token;
+}
+
+// Main function to get the next token
+Token getNextToken() {
+    // Skip whitespace
+    while (isspace(current_char)) {
+        advance();
+    }
+
+    // End of input
+    if (current_char == '\0') {
+        return createToken(END_OF_FILE, "EOF");
+    }
+
+    // Check for identifiers (starting with a letter)
+    if (isalpha(current_char)) {
+        return identifier();
+    }
+
+    // Check for integer literals (digits)
+    if (isdigit(current_char)) {
+        return integerLiteral();
+    }
+
+    // Check for multi-character tokens
+    if (current_char == ':') {
+        advance();
+        if (current_char == '=') {
+            advance();
+            return createToken(ASSIGN, ":=");
+        }
+        return createToken(UNKNOWN, ":");
+    }
+
+    // Check for single-character tokens
+    switch (current_char) {
+        case '+':
+        case '-':
+            {
+                char lexeme[2] = {current_char, '\0'};
+                Token token = createToken(ADD, lexeme);
+                advance();
+                return token;
+            }
+        case '*':
+        case '/':
+            {
+                char lexeme[2] = {current_char, '\0'};
+                Token token = createToken(MULT, lexeme);
+                advance();
+                return token;
+            }
+        case ';':
+            {
+                char lexeme[2] = {current_char, '\0'};
+                Token token = createToken(SEMICOLON, lexeme);
+                advance();
+                return token;
+            }
+        default:
+            {
+                char lexeme[2] = {current_char, '\0'};
+                Token token = createToken(UNKNOWN, lexeme);
+                advance();
+                return token;
+            }
     }
 }
 
-/**
- * @brief Function to get the next character of input and determine its character class
- */
-void getChar(char *line) {
-    if (line[line_pos] != NULL) {
-        next_char = line[line_pos++];
-        if (isalpha(next_char))
-            char_class = LETTER;
-        else if (isdigit(next_char))
-            char_class = DIGIT;
-        else
-            char_class = UNKNOWN;
-    } else {
-        char_class = EOF;
+// Function to handle identifiers
+Token identifier() {
+    char lexeme[100];
+    int length = 0;
+
+    while (isalnum(current_char)) {
+        if (length < sizeof(lexeme) - 1) {
+            lexeme[length++] = current_char;
+        }
+        advance();
     }
+    lexeme[length] = '\0';
+    return createToken(IDENT, lexeme);
 }
 
-/**
- * @brief Function for lexer for arithmetic expressions
- */
-int lexical() {
-    lex_len = 0;
-    next_token = ERROR; 
-    
-    // Read until first non blank char
-    while (isspace(next_char)) { getChar(); }
+// Function to handle integer literals
+Token integerLiteral() {
+    char lexeme[100];
+    int length = 0;
 
-    switch (char_class) {
-        // Parse identifiers
-        case LETTER:
-            while (char_class == LETTER || char_class == DIGIT) {
-                addChar();
-                getChar();
-            }
-            next_token = IDENTIFIER;
-            id_cnt++;
-            break;
-    
-        // Integer literals (constants)
-        case DIGIT:
-            while (char_class == DIGIT) {
-                addChar();
-                getChar();
-            }
-            next_token = CONSTANT;
-            const_cnt++;
-            break;
-    
-        // Parentheses and operators
-        case UNKNOWN:
-            if (next_char == ':') {
-                getChar();
-                if (next_char == '=') 
-                    next_token = ASSIGN_OP;
-            } else {
-                next_token = lookup(lexeme);
-            }
-            
-            if (next_token == ADD_OP || next_token == MULT_OP) {
-                op_cnt++;
-            }
-            break;
-    
-        // EOF
-        case EOF:
-            next_token = EOF;
-            strcpy(lexeme, "EOF");
-            break;
+    while (isdigit(current_char)) {
+        if (length < sizeof(lexeme) - 1) {
+            lexeme[length++] = current_char;
+        }
+        advance();
     }
-    printf("Got: %s\n", lexeme);
-    if (next_token == ERROR) {
-        
-    }
-    return next_token;
+    lexeme[length] = '\0';
+    return createToken(INT_LIT, lexeme);
 }
