@@ -1,47 +1,15 @@
-/**
- * File Name: You should name your source file as your student ID (e.g., 20204870.c)
- * Author: Ix Lab TA Dohwa Kim
- * Year: 2024
- *
- * Description:
- * This file is the skeleton code for the PL parser project.
- * Basic code is provided in the main function and some other functions.
- * Students should not modify the main function or the provided functions.
- * Students should add additional functions and variables to complete the parser.
- * It is IMPORTANT to use the provided functions when you need to print information.
- * Detailed descriptions are given below, so please read carefully.
- * Our automated scoring system may give you 0 points if you modify the provided code, and no exceptions will be accepted.
- *
- * Instructions:
- * - Complete the parser project according to the instructions provided in the word file from the class.
- * - You should NOT modify the pre-made code.
- * - You may add standard library headers like string.h or stdlib.h, but do not use custom headers from the internet.
- *   (Standard libraries should be sufficient for this project.)
- * - You have to submit cmake file too, so you have to modify it little bit like in instruction file. Please just follow instruction
- *
- * Note:
- * If you have any questions about this project, please email me at: kimdohwa2@cau.ac.kr
- */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
-/**
- * @brief Represents an identifier with a name and value.
- *
- * This structure is used to store information about identifiers
- * in the PL parser project. Each identifier has a name and an associated value.
- * The value can be a string or a numeric value depending on the use case.
- * You can add more fields if you want but DO NOT MODIFY predefined fields
- */
 typedef struct {
-	char name[50];
-	char value[100];
-}Ident;
+    char name[50];
+    int value;
+} Ident;
 
 typedef enum {
-    ASSIGN, ADD, MULT, SEMICOLON, IDENT, INT_LIT, END_OF_FILE, UNKNOWN
+    ASSIGN, ADD, MULT, SEMICOLON, IDENT, INT_LIT, END_OF_FILE, LPAREN, RPAREN, UNKNOWN
 } TokenType;
 
 typedef struct {
@@ -52,38 +20,40 @@ typedef struct {
 char line[100];
 FILE *file;
 Ident idArray[50];
+Token current_token;
+int error = 0;
+int ID_count = 0;
+int CONST_count = 0;
+int OP_count = 0;
+int id_count = 0;
+int pos = 0;
+char current_char;
 
 void printResultByLine(char *line, int ID, int CON, int OP);
 void printIdent(int num_ident);
-void parse();
-void parse_V();
+void parse(char *line);
+void parse_V(char *line);
+void printOK(void);
 void printOPWarning(int code);
 void printIDError(char *name);
+void printToken(char *token);
 
-/**
- *
- * @brief Main function for processing a file.
- *
- * This program expects a file path as a command-line argument.
- * You should provide the absolute path to the file as the first argument
- * when running this program. An absolute path is the complete path from the
- * root directory of your file system to the file.
- *
- * Examples:
- * - On Windows:
- *   student_program.exe C:/Users/YourName/Desktop/test_input.txt
- *   or
- *   student_program.exe C:\\Users\\YourName\\Desktop\\test_input.txt
- *
- * - On Linux/MacOS:
- *   ./student_program /home/yourname/Desktop/test_input.txt
- *
- * Make sure that the file exists at the specified path, and that you have the
- * correct permissions to read the file.
- * 
- *
- *
- */
+void program(char *line);
+void statements(char *line);
+void statement(char *line);
+int expression(char *line);
+int term_tail(char *line, int val);
+int term(char *line);
+int factor(char *line);
+int factor_tail(char *line, int val);
+
+void advance(char *line);
+int lookupIdentValue(char *name);
+void setIdentValue(char *name, int value);
+void lexical(char *line);
+Token identifier(char *line);
+Token integerLiteral(char *line);
+Token createToken(TokenType type, const char *lexeme);
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -112,262 +82,303 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Gets input line for the first time
-    fgets(line, sizeof(line), file);
-
-    // Depending on the verbose flag, call the appropriate function
-    if (verbose) {
-        parse_V();
-    } else {
-        parse();
+    while (fgets(line, sizeof(line), file) != NULL) {
+        if (verbose) {
+            parse_V(line);
+        } else {
+            parse(line);
+        }
     }
 
     fclose(file);
     return 0;
 }
 
-/**
- * @brief This function is the starting point of this project with no option -v (print option a).
- *
- * You can freely modify this code or add more functions.
- * However, you SHOULD use the print functions below when you need to print some lines on screen,
- * or you might risk receiving 0 points even if the program works perfectly.
- */
-void parse() {
-    // TODO: Implement the parsing logic here
+void parse(char *line) {
+    pos = 0;
+    error = 0;
+    advance(line);
+    ID_count = CONST_count = OP_count = 0;
+
+    lexical(line);
+    program(line);
+
+    if (current_token.type == UNKNOWN) {
+        printIDError(current_token.lexeme);
+    } else {
+        printResultByLine(line, ID_count, CONST_count, OP_count);
+        printOK();
+    }
 }
 
-/**
- * @brief This function is the starting point of this project with option -v (print option b).
- *
- * You can freely modify this code or add more functions.
- * However, you SHOULD use the print functions below when you need to print some lines on screen,
- * or you might risk receiving 0 points even if the program works perfectly.
- */
-void parse_V() {
-    // TODO: Implement the parsing logic here for verbose output
+void parse_V(char *line) {
+    pos = 0;
+    error = 0;
+    advance(line);
+    lexical(line);
+
+    while (current_token.type != END_OF_FILE) {
+        printToken(current_token.lexeme);
+        lexical(line);
+    }
 }
 
-/**
- * @brief Function that prints the line and the number of IDs, constants, and operands.
- *
- * YOU SHOULD NOT MODIFY THIS CODE,
- * or you might risk receiving 0 points.
- *
- * @param line The line that the program has read.
- * @param ID The number of IDs.
- * @param CON The number of constants.
- * @param OP The number of operands.
- * @param 0 to print (OK)
- */
+void printOK(void) {
+    printf("(OK)\n");
+}
+
+void printOPWarning(int code) {
+    switch (code) {
+        case 1:
+            printf("(Warning) \"Eliminating duplicate operator (+)\"\n");
+            break;
+        case 2:
+            printf("(Warning) \"Eliminating duplicate operator (-)\"\n");
+            break;
+        case 3:
+            printf("(Warning) \"Eliminating duplicate operator (*)\"\n");
+            break;
+        case 4:
+            printf("(Warning) \"Eliminating duplicate operator (/)\"\n");
+            break;
+        case 5:
+            printf("(Warning) \"Substituting assignment operator (: =)\"\n");
+            break;
+        default:
+            printf("(Warning) \"Unknown issue\"\n");
+    }
+}
+
+void printIDError(char *name) {
+    printf("(Error) \"referring to undefined identifiers(%s)\"\n", name);
+}
+
 void printResultByLine(char *line, int ID, int CON, int OP) {
     printf("%s\n", line);
     printf("ID: %d; CONST: %d; OP: %d;\n", ID, CON, OP);
 }
 
-/**
- * @brief Function that prints the warning message about Operands
- *
- * YOU SHOULD NOT MODIFY THIS CODE,
- * or you might risk receiving 0 points.
- *
- * @param code The warning code of operand
- * 1 : Multiple (+) Operation | 2 : Multiple (-) Operation
- * 3 : Multiple (*) Operation | 4 : Multiple (/) Operation
- * 5 : Wrong Assignment Operation (:=)
- */
-void printOPWarning(int code){
-	switch(code){
-	
-    	case 1:
-    		printf("(Warning) \"Eliminating duplicate operator (+)\"\n");
-    		break;
-    	case 2:
-    		printf("(Warning) \"Eliminating duplicate operator (-)\"\n");
-    		break;
-    	case 3:
-    		printf("(Warning) \"Eliminating duplicate operator (*)\"\n");
-    		break;
-    	case 4:
-    		printf("(Warning) \"Eliminating duplicate operator (/)\"\n");
-    		break;
-    	case 5:
-    		printf("(Warning) \"Substituting assignment operator (:=)\"\n"); 
-    		break;
-    	}
-}
-/**
- * @brief Function that prints OK sign
- *
- */
-void printOK(){
-	printf("(OK)\n");
+void printToken(char *token) {
+    printf("%s\n", token);
 }
 
-/**
- * @brief Function that prints the line and the number of IDs, constants, and operands.
- *
- * YOU SHOULD NOT MODIFY THIS CODE,
- * or you might risk receiving 0 points.
- *
- * @param name The name of Identifier that didn't referenced before
- */
-void printIDError(char *name){
-	printf("(Error) \"referring to undefined identifiers(%s)\"\n",name);
+void program(char *line) {
+    statements(line);
 }
 
-/**
- * @brief Function that prints the result of identifiers.
- *
- * YOU SHOULD NOT MODIFY THIS CODE,
- * or you might risk receiving 0 points.
- *
- * Save identifiers in predefined array
- * @param num_ident The number of identifiers.
- * 
- * Result ==> operand1: 2; total: 2;
- */
-void printIdent(int num_ident) {
-    int i;
-    printf("Result ==>");
-    for (i = 0; i < num_ident; i++) {
-        printf(" %s: %s;", idArray[i].name, idArray[i].value);
+void statements(char *line) {
+    statement(line);
+    if (current_token.type == SEMICOLON) {
+        lexical(line);
+        statements(line);
     }
 }
-/**
- * @brief Funtion that prints token by line
- *
- * YOU SHOULD NOT MODIFY THIS CODE,
- * or you might risk receiving 0 points
- *
- * Print token by line
- * This function is used for verbose mode(-v)
- * @param token Token that you want to print
- *
- */
-void printToken(char *token){
-	printf("%s\n", token);
+
+void statement(char *line) {
+    char ident_name[50];
+
+    if (current_token.type == IDENT) {
+        strcpy(ident_name, current_token.lexeme);
+        ID_count++;
+
+        lexical(line);
+
+        if (current_token.type == ASSIGN) {
+            lexical(line);
+
+            int expr_value = expression(line);
+
+            setIdentValue(ident_name, expr_value);
+        } else {
+            error = 1;
+        }
+    } else if (current_token.type != SEMICOLON && current_token.type != END_OF_FILE) {
+        printIDError(current_token.lexeme);
+    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-// Lexer variables
-const char *input;
-int pos = 0;
-char current_char;
-
-// Function prototypes
-void advance();
-Token getNextToken();
-Token identifier();
-Token integerLiteral();
-Token createToken(TokenType type, const char *lexeme);
-
-int main() {
-    input = "var1 := [] 5 + 3 * (var2 - 4);";
-    advance();
-
-    Token token;
-    do {
-        token = getNextToken();
-        printf("Token(Type: %d, Lexeme: \"%s\")\n", token.type, token.lexeme);
-    } while (token.type != END_OF_FILE);
-
-    return 0;
+int expression(char *line) {
+    int term_value = term(line);
+    return term_tail(line, term_value);
 }
 
-// Advance to the next character in the input
-void advance() {
-    current_char = input[pos++];
+int term_tail(char *line, int inherited_value) {
+    if (current_token.type == ADD) {
+        OP_count++;
+        int op_type = current_token.type;
+        lexical(line);
+
+        int term_value = term(line);
+        int result = (op_type == ADD) ? inherited_value + term_value : inherited_value - term_value;
+
+        return term_tail(line, result);
+    }
+    return inherited_value;
 }
 
-// Create a new token
+int term(char *line) {
+    int factor_value = factor(line);
+    return factor_tail(line, factor_value);
+}
+
+int factor_tail(char *line, int inherited_value) {
+    if (current_token.type == MULT) {
+        OP_count++;
+        int op_type = current_token.type;
+        lexical(line);
+
+        int factor_value = factor(line);
+        int result = (op_type == MULT) ? inherited_value * factor_value : inherited_value / factor_value;
+
+        return factor_tail(line, result);
+    }
+    return inherited_value;
+}
+
+int factor(char *line) {
+    int value = 0;
+
+    if (current_token.type == LPAREN) {
+        lexical(line);
+        value = expression(line);
+        if (current_token.type == RPAREN) {
+            lexical(line);
+        } else {
+            printIDError("Missing closing parenthesis.");
+        }
+    } else if (current_token.type == IDENT) {
+        value = lookupIdentValue(current_token.lexeme);
+        ID_count++;
+        lexical(line);
+    } else if (current_token.type == INT_LIT) {
+        value = atoi(current_token.lexeme);
+        CONST_count++;
+        lexical(line);
+    } else if (current_token.type != SEMICOLON && current_token.type != END_OF_FILE) {
+        printIDError(current_token.lexeme);
+    }
+
+    return value;
+}
+
+void lexical(char *line) {
+    while (isspace(current_char)) {
+        advance(line);
+    }
+
+    if (current_char == '\0') {
+        current_token = createToken(END_OF_FILE, "EOF");
+        return;
+    }
+
+    if (isalpha(current_char)) {
+        current_token = identifier(line);
+        return;
+    }
+
+    if (isdigit(current_char)) {
+        current_token = integerLiteral(line);
+        return;
+    }
+
+    if (current_char == ':') {
+        advance(line);
+        if (current_char == '=') {
+            advance(line);
+            current_token = createToken(ASSIGN, ":=");
+        } else {
+            current_token = createToken(UNKNOWN, ":");
+        }
+        return;
+    }
+
+    if (current_char == '=') {
+        printOPWarning(5);
+        current_token = createToken(ASSIGN, ":=");
+        advance(line);
+        return;
+    }
+
+    switch (current_char) {
+        case '+': {
+            char lexeme[2] = {current_char, '\0'};
+            advance(line);
+            if (current_char == '+') {
+                printOPWarning(1);
+                advance(line);
+            }
+            current_token = createToken(ADD, lexeme);
+            return;
+        }
+        case '-': {
+            char lexeme[2] = {current_char, '\0'};
+            advance(line);
+            if (current_char == '-') {
+                printOPWarning(2);
+                advance(line);
+            }
+            current_token = createToken(ADD, lexeme);
+            return;
+        }
+        case '*': {
+            char lexeme[2] = {current_char, '\0'};
+            advance(line);
+            if (current_char == '*') {
+                printOPWarning(3);
+                advance(line);
+            }
+            current_token = createToken(MULT, lexeme);
+            return;
+        }
+        case '/': {
+            char lexeme[2] = {current_char, '\0'};
+            advance(line);
+            if (current_char == '/') {
+                printOPWarning(4);
+                advance(line);
+            }
+            current_token = createToken(MULT, lexeme);
+            return;
+        }
+        case ';': {
+            char lexeme[2] = {current_char, '\0'};
+            current_token = createToken(SEMICOLON, lexeme);
+            advance(line);
+            return;
+        }
+        case '(':
+        case ')': {
+            char lexeme[2] = {current_char, '\0'};
+            current_token = createToken((current_char == '(') ? LPAREN : RPAREN, lexeme);
+            advance(line);
+            return;
+        }
+        default: {
+            char lexeme[2] = {current_char, '\0'};
+            current_token = createToken(UNKNOWN, lexeme);
+            advance(line);
+            return;
+        }
+    }
+}
+
+void advance(char *line) {
+    if (line[pos] != '\0') {
+        current_char = line[pos++];
+    } else {
+        current_char = '\0';
+    }
+}
+
 Token createToken(TokenType type, const char *lexeme) {
     Token token;
     token.type = type;
     strncpy(token.lexeme, lexeme, sizeof(token.lexeme) - 1);
-    token.lexeme[sizeof(token.lexeme) - 1] = '\0'; // Ensure null-termination
+    token.lexeme[sizeof(token.lexeme) - 1] = '\0';
     return token;
 }
 
-// Main function to get the next token
-Token getNextToken() {
-    // Skip whitespace
-    while (isspace(current_char)) {
-        advance();
-    }
-
-    // End of input
-    if (current_char == '\0') {
-        return createToken(END_OF_FILE, "EOF");
-    }
-
-    // Check for identifiers (starting with a letter)
-    if (isalpha(current_char)) {
-        return identifier();
-    }
-
-    // Check for integer literals (digits)
-    if (isdigit(current_char)) {
-        return integerLiteral();
-    }
-
-    // Check for multi-character tokens
-    if (current_char == ':') {
-        advance();
-        if (current_char == '=') {
-            advance();
-            return createToken(ASSIGN, ":=");
-        }
-        return createToken(UNKNOWN, ":");
-    }
-
-    // Check for single-character tokens
-    switch (current_char) {
-        case '+':
-        case '-':
-            {
-                char lexeme[2] = {current_char, '\0'};
-                Token token = createToken(ADD, lexeme);
-                advance();
-                return token;
-            }
-        case '*':
-        case '/':
-            {
-                char lexeme[2] = {current_char, '\0'};
-                Token token = createToken(MULT, lexeme);
-                advance();
-                return token;
-            }
-        case ';':
-            {
-                char lexeme[2] = {current_char, '\0'};
-                Token token = createToken(SEMICOLON, lexeme);
-                advance();
-                return token;
-            }
-        default:
-            {
-                char lexeme[2] = {current_char, '\0'};
-                Token token = createToken(UNKNOWN, lexeme);
-                advance();
-                return token;
-            }
-    }
-}
-
-// Function to handle identifiers
-Token identifier() {
+Token identifier(char *line) {
     char lexeme[100];
     int length = 0;
 
@@ -375,14 +386,13 @@ Token identifier() {
         if (length < sizeof(lexeme) - 1) {
             lexeme[length++] = current_char;
         }
-        advance();
+        advance(line);
     }
     lexeme[length] = '\0';
     return createToken(IDENT, lexeme);
 }
 
-// Function to handle integer literals
-Token integerLiteral() {
+Token integerLiteral(char *line) {
     char lexeme[100];
     int length = 0;
 
@@ -390,8 +400,30 @@ Token integerLiteral() {
         if (length < sizeof(lexeme) - 1) {
             lexeme[length++] = current_char;
         }
-        advance();
+        advance(line);
     }
     lexeme[length] = '\0';
     return createToken(INT_LIT, lexeme);
+}
+
+int lookupIdentValue(char *name) {
+    for (int i = 0; i < id_count; i++) {
+        if (strcmp(idArray[i].name, name) == 0) {
+            return idArray[i].value;
+        }
+    }
+    printIDError(name);
+    return 0;
+}
+
+void setIdentValue(char *name, int value) {
+    for (int i = 0; i < id_count; i++) {
+        if (strcmp(idArray[i].name, name) == 0) {
+            idArray[i].value = value;
+            return;
+        }
+    }
+    strcpy(idArray[id_count].name, name);
+    idArray[id_count].value = value;
+    id_count++;
 }
