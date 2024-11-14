@@ -1,3 +1,10 @@
+/*
+ some fixing to do:
+ 1. keep track of all tokens with the lexer.
+ 2. use getNextToken to get the next token.
+
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +63,7 @@ Token integerLiteral(char *line);
 Token createToken(TokenType type, const char *lexeme);
 
 int main(int argc, char **argv) {
+    /*
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [-v] <filepath>\n", argv[0]);
         return 1;
@@ -92,23 +100,23 @@ int main(int argc, char **argv) {
 
     fclose(file);
     return 0;
+    */
+    
+    char line[100] = "operator2 := operator1 + + 4;";
+    parse(line);
 }
 
 void parse(char *line) {
     pos = 0;
     error = 0;
-    advance(line);
     ID_count = CONST_count = OP_count = 0;
-
+    
+    // Get the first token
+    advance(line);
     lexical(line);
+    
+    // Check grammar
     program(line);
-
-    if (current_token.type == UNKNOWN) {
-        printIDError(current_token.lexeme);
-    } else {
-        printResultByLine(line, ID_count, CONST_count, OP_count);
-        printOK();
-    }
 }
 
 void parse_V(char *line) {
@@ -172,6 +180,7 @@ void statements(char *line) {
         lexical(line);
         statements(line);
     }
+    printResultByLine(line, ID_count, CONST_count, OP_count);
 }
 
 void statement(char *line) {
@@ -185,31 +194,26 @@ void statement(char *line) {
 
         if (current_token.type == ASSIGN) {
             lexical(line);
-
-            int expr_value = expression(line);
-
-            setIdentValue(ident_name, expr_value);
+            setIdentValue(ident_name, expression(line));
         } else {
             error = 1;
         }
-    } else if (current_token.type != SEMICOLON && current_token.type != END_OF_FILE) {
+    } else {
         printIDError(current_token.lexeme);
     }
 }
 
 int expression(char *line) {
-    int term_value = term(line);
-    return term_tail(line, term_value);
+    return term_tail(line, term(line));
 }
 
 int term_tail(char *line, int inherited_value) {
     if (current_token.type == ADD) {
         OP_count++;
-        int op_type = current_token.type;
         lexical(line);
 
         int term_value = term(line);
-        int result = (op_type == ADD) ? inherited_value + term_value : inherited_value - term_value;
+        int result = (current_token.type == ADD) ? inherited_value + term_value : inherited_value - term_value;
 
         return term_tail(line, result);
     }
@@ -217,18 +221,16 @@ int term_tail(char *line, int inherited_value) {
 }
 
 int term(char *line) {
-    int factor_value = factor(line);
-    return factor_tail(line, factor_value);
+    return factor_tail(line, factor(line));
 }
 
 int factor_tail(char *line, int inherited_value) {
     if (current_token.type == MULT) {
         OP_count++;
-        int op_type = current_token.type;
         lexical(line);
 
         int factor_value = factor(line);
-        int result = (op_type == MULT) ? inherited_value * factor_value : inherited_value / factor_value;
+        int result = (current_token.type == MULT) ? inherited_value * factor_value : inherited_value / factor_value;
 
         return factor_tail(line, result);
     }
@@ -244,7 +246,7 @@ int factor(char *line) {
         if (current_token.type == RPAREN) {
             lexical(line);
         } else {
-            printIDError("Missing closing parenthesis.");
+            printIDError(current_token.lexeme);
         }
     } else if (current_token.type == IDENT) {
         value = lookupIdentValue(current_token.lexeme);
@@ -254,17 +256,20 @@ int factor(char *line) {
         value = atoi(current_token.lexeme);
         CONST_count++;
         lexical(line);
-    } else if (current_token.type != SEMICOLON && current_token.type != END_OF_FILE) {
+    } else {
         printIDError(current_token.lexeme);
     }
 
     return value;
 }
 
+void getNonBlank(char *line) {
+    while (isspace(current_char)) advance(line);  
+}
+
 void lexical(char *line) {
-    while (isspace(current_char)) {
-        advance(line);
-    }
+    
+    getNonBlank(line);
 
     if (current_char == '\0') {
         current_token = createToken(END_OF_FILE, "EOF");
@@ -282,6 +287,7 @@ void lexical(char *line) {
     }
 
     if (current_char == ':') {
+        getNonBlank(line);
         advance(line);
         if (current_char == '=') {
             advance(line);
@@ -298,67 +304,62 @@ void lexical(char *line) {
         advance(line);
         return;
     }
-
+    
+    char lexeme[2] = {current_char, '\0'};
+    
     switch (current_char) {
-        case '+': {
-            char lexeme[2] = {current_char, '\0'};
+        case '+':
             advance(line);
             if (current_char == '+') {
                 printOPWarning(1);
                 advance(line);
             }
             current_token = createToken(ADD, lexeme);
-            return;
-        }
-        case '-': {
-            char lexeme[2] = {current_char, '\0'};
+            break;
+            
+        case '-':
             advance(line);
             if (current_char == '-') {
                 printOPWarning(2);
                 advance(line);
             }
             current_token = createToken(ADD, lexeme);
-            return;
-        }
-        case '*': {
-            char lexeme[2] = {current_char, '\0'};
+            break;
+            
+        case '*':
             advance(line);
             if (current_char == '*') {
                 printOPWarning(3);
                 advance(line);
             }
             current_token = createToken(MULT, lexeme);
-            return;
-        }
-        case '/': {
-            char lexeme[2] = {current_char, '\0'};
+            break;
+            
+        case '/':
             advance(line);
             if (current_char == '/') {
                 printOPWarning(4);
                 advance(line);
             }
             current_token = createToken(MULT, lexeme);
-            return;
-        }
-        case ';': {
+            break;
+            
+        case ';':
             char lexeme[2] = {current_char, '\0'};
             current_token = createToken(SEMICOLON, lexeme);
             advance(line);
-            return;
-        }
+            break;
+            
         case '(':
-        case ')': {
-            char lexeme[2] = {current_char, '\0'};
+        case ')':
             current_token = createToken((current_char == '(') ? LPAREN : RPAREN, lexeme);
             advance(line);
-            return;
-        }
-        default: {
-            char lexeme[2] = {current_char, '\0'};
+            break;
+
+        default:
             current_token = createToken(UNKNOWN, lexeme);
             advance(line);
-            return;
-        }
+            break;
     }
 }
 
