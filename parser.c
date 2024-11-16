@@ -1,69 +1,72 @@
-/*
- some fixing to do:
- 1. keep track of all tokens with the lexer.
- 2. use getNextToken to get the next token.
-
- */
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 typedef struct {
     char name[50];
-    int value;
+    char value[100];
 } Ident;
 
 typedef enum {
-    ASSIGN, ADD, MULT, SEMICOLON, IDENT, INT_LIT, END_OF_FILE, LPAREN, RPAREN, UNKNOWN
+    ASSIGN_OP, ADD_OP, MULT_OP, SEMICOLON, IDENT, CONSTANT, END_OF_FILE, LPAREN, RPAREN, UNKNOWN
 } TokenType;
 
 typedef struct {
     TokenType type;
-    char lexeme[100];
+    char token_string[50];
 } Token;
 
-char line[100];
+char line[100], error_ident[50];
 FILE *file;
 Ident idArray[50];
-Token current_token;
-int error = 0;
-int ID_count = 0;
-int CONST_count = 0;
-int OP_count = 0;
-int id_count = 0;
-int pos = 0;
-char current_char;
+Token tokenArray[200];
 
 void printResultByLine(char *line, int ID, int CON, int OP);
 void printIdent(int num_ident);
 void parse(char *line);
 void parse_V(char *line);
+
 void printOK(void);
+void printToken(char *token);
 void printOPWarning(int code);
 void printIDError(char *name);
-void printToken(char *token);
 
-void program(char *line);
+int isInt(const char *str);
 void statements(char *line);
 void statement(char *line);
-int expression(char *line);
-int term_tail(char *line, int val);
-int term(char *line);
-int factor(char *line);
-int factor_tail(char *line, int val);
+char *expression(char *line, char *result);
+char *term_tail(char *line, char *inherited_value, char *result);
+char *term(char *line, char *result);
+char *factor(char *line, char *result);
+char *factor_tail(char *line, char *inherited_value, char *result);
 
-void advance(char *line);
-int lookupIdentValue(char *name);
-void setIdentValue(char *name, int value);
+void getChar(char *line);
+void addChar(char *line);
+void getNonBlank(char *line);
 void lexical(char *line);
-Token identifier(char *line);
-Token integerLiteral(char *line);
-Token createToken(TokenType type, const char *lexeme);
+char *lookupIdentValue(char *name);
+void setIdentValue(char *name, char *value);
+
+int add_pos;
+int get_pos;
+int push_pos;
+
+int id_cnt;
+int const_cnt;
+int op_cnt;
+
+int id_tot;
+int id_error;
+int id_warning;
+int vflag;
+
+char current_char;
+char token_string[100];
+
+Token next_token;
 
 int main(int argc, char **argv) {
-    /*
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [-v] <filepath>\n", argv[0]);
         return 1;
@@ -89,8 +92,11 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: Could not open file %s\n", filepath);
         return 1;
     }
-
-    while (fgets(line, sizeof(line), file) != NULL) {
+    
+    id_tot = 0;
+    vflag = verbose;
+    
+    while (fgets(line, sizeof(line), file)) {
         if (verbose) {
             parse_V(line);
         } else {
@@ -98,45 +104,62 @@ int main(int argc, char **argv) {
         }
     }
 
+    
+    if (!verbose) printIdent(id_tot);
+    
     fclose(file);
     return 0;
-    */
-    
-    char line[100] = "operator2 := operator1 + + 4;";
-    parse(line);
 }
 
 void parse(char *line) {
-    pos = 0;
-    error = 0;
-    ID_count = CONST_count = OP_count = 0;
+    id_cnt = const_cnt = op_cnt = 0;
+    get_pos = push_pos = 0;
+    id_error = id_warning = 0;
     
-    // Get the first token
-    advance(line);
-    lexical(line);
+    getChar(line);
+    while(current_char != '\0') {
+        lexical(line);
+        statements(line);
+    }
     
-    // Check grammar
-    program(line);
+    // Print line
+    char fline[100] = "";
+    for (int i = 0; i < push_pos; i++) {
+        const char *current = tokenArray[i].token_string;
+        strcat(fline, current);
+        if (i < push_pos - 1) {
+            const char *next = tokenArray[i + 1].token_string;
+            if (!strcmp(current, "(") || !strcmp(next, ")") || !strcmp(next, ";")) continue;
+            strcat(fline, " ");
+        }
+    }
+    
+    printResultByLine(fline, id_cnt, const_cnt, op_cnt);
+    if (!id_error && !id_warning) printOK();
+    else if (id_warning > 0 && !id_error) printOPWarning(id_warning);
+    else printIDError(error_ident);
 }
 
 void parse_V(char *line) {
-    pos = 0;
-    error = 0;
-    advance(line);
-    lexical(line);
-
-    while (current_token.type != END_OF_FILE) {
-        printToken(current_token.lexeme);
+    id_cnt = const_cnt = op_cnt = 0;
+    get_pos = add_pos = push_pos = 0;
+    id_error = id_warning = 0;
+    
+    getChar(line);
+    while(current_char != '\0') {
+        add_pos = 0;
         lexical(line);
+        if (next_token.type != UNKNOWN) printToken(next_token.token_string);
     }
 }
 
-void printOK(void) {
-    printf("(OK)\n");
+void printResultByLine(char *line, int ID, int CON, int OP) {
+    printf("%s\n", line);
+    printf("ID: %d; CONST: %d; OP: %d;\n", ID, CON, OP);
 }
 
 void printOPWarning(int code) {
-    switch (code) {
+    switch(code) {
         case 1:
             printf("(Warning) \"Eliminating duplicate operator (+)\"\n");
             break;
@@ -150,281 +173,323 @@ void printOPWarning(int code) {
             printf("(Warning) \"Eliminating duplicate operator (/)\"\n");
             break;
         case 5:
-            printf("(Warning) \"Substituting assignment operator (: =)\"\n");
+            printf("(Warning) \"Substituting assignment operator (:=)\"\n");
             break;
-        default:
-            printf("(Warning) \"Unknown issue\"\n");
-    }
+        }
+}
+
+void printOK() {
+    printf("(OK)\n");
 }
 
 void printIDError(char *name) {
     printf("(Error) \"referring to undefined identifiers(%s)\"\n", name);
 }
 
-void printResultByLine(char *line, int ID, int CON, int OP) {
-    printf("%s\n", line);
-    printf("ID: %d; CONST: %d; OP: %d;\n", ID, CON, OP);
+void printIdent(int num_ident) {
+    int i;
+    printf("Result ==> ");
+    for (i = 0; i < num_ident; i++) {
+        printf(" %s: %s;", idArray[i].name, idArray[i].value);
+    }
+    printf("\n");
 }
 
 void printToken(char *token) {
     printf("%s\n", token);
 }
 
-void program(char *line) {
-    statements(line);
-}
-
+// Subprograms
+// <statements> → <statement> | <statement><semi_colon><statements>
 void statements(char *line) {
     statement(line);
-    if (current_token.type == SEMICOLON) {
+    if (next_token.type == SEMICOLON) {
         lexical(line);
         statements(line);
     }
-    printResultByLine(line, ID_count, CONST_count, OP_count);
 }
 
+// <statement> → <ident><assignment_op><expression>
 void statement(char *line) {
     char ident_name[50];
 
-    if (current_token.type == IDENT) {
-        strcpy(ident_name, current_token.lexeme);
-        ID_count++;
+    if (next_token.type == IDENT) {
+        strcpy(ident_name, next_token.token_string);
 
         lexical(line);
 
-        if (current_token.type == ASSIGN) {
+        if (next_token.type == ASSIGN_OP) {
+            char expr_value[50] = "";
             lexical(line);
-            setIdentValue(ident_name, expression(line));
-        } else {
-            error = 1;
+            expression(line, expr_value);
+            setIdentValue(ident_name, expr_value);
         }
-    } else {
-        printIDError(current_token.lexeme);
     }
 }
 
-int expression(char *line) {
-    return term_tail(line, term(line));
+// <expression> → <term><term_tail>
+char *expression(char *line, char *result) {
+    char term_result[50] = "";
+    term(line, term_result);  // Parse the first term
+    term_tail(line, term_result, result);  // Handle addition/subtraction
+    return result;
 }
 
-int term_tail(char *line, int inherited_value) {
-    if (current_token.type == ADD) {
-        OP_count++;
+// <term_tail> → <add_op><term><term_tail> | ε
+char *term_tail(char *line, char *inherited_value, char *result) {
+    if (next_token.type == ADD_OP) {
+        char term_result[50] = "";
+        char operator = next_token.token_string[0];
         lexical(line);
 
-        int term_value = term(line);
-        int result = (current_token.type == ADD) ? inherited_value + term_value : inherited_value - term_value;
-
-        return term_tail(line, result);
-    }
-    return inherited_value;
-}
-
-int term(char *line) {
-    return factor_tail(line, factor(line));
-}
-
-int factor_tail(char *line, int inherited_value) {
-    if (current_token.type == MULT) {
-        OP_count++;
-        lexical(line);
-
-        int factor_value = factor(line);
-        int result = (current_token.type == MULT) ? inherited_value * factor_value : inherited_value / factor_value;
-
-        return factor_tail(line, result);
-    }
-    return inherited_value;
-}
-
-int factor(char *line) {
-    int value = 0;
-
-    if (current_token.type == LPAREN) {
-        lexical(line);
-        value = expression(line);
-        if (current_token.type == RPAREN) {
-            lexical(line);
+        term(line, term_result);  // Parse the next term
+        if (strcmp(inherited_value, "Unknown") && strcmp(term_result, "Unknown")) {
+            int answer = (operator == '+') ? atoi(inherited_value) + atoi(term_result)
+                                           : atoi(inherited_value) - atoi(term_result);
+            sprintf(result, "%d", answer);
         } else {
-            printIDError(current_token.lexeme);
+            strcpy(result, "Unknown");
         }
-    } else if (current_token.type == IDENT) {
-        value = lookupIdentValue(current_token.lexeme);
-        ID_count++;
-        lexical(line);
-    } else if (current_token.type == INT_LIT) {
-        value = atoi(current_token.lexeme);
-        CONST_count++;
-        lexical(line);
-    } else {
-        printIDError(current_token.lexeme);
+        return term_tail(line, result, result);  // Continue parsing additional terms
     }
-
-    return value;
+    if (result != inherited_value)
+        strcpy(result, inherited_value);
+    return result;
 }
 
-void getNonBlank(char *line) {
-    while (isspace(current_char)) advance(line);  
+// <term> → <factor> <factor_tail>
+char *term(char *line, char *result) {
+    char factor_result[50] = "";
+    factor(line, factor_result);  // Parse the first factor
+    factor_tail(line, factor_result, result);  // Handle multiplication/division
+    return result;
 }
 
-void lexical(char *line) {
-    
-    getNonBlank(line);
+// <factor_tail> → <mult_op><factor><factor_tail> | ε
+char *factor_tail(char *line, char *inherited_value, char *result) {
+    if (next_token.type == MULT_OP) {
+        char factor_result[50] = "";
+        char operator = next_token.token_string[0];
+        lexical(line);
 
-    if (current_char == '\0') {
-        current_token = createToken(END_OF_FILE, "EOF");
-        return;
-    }
-
-    if (isalpha(current_char)) {
-        current_token = identifier(line);
-        return;
-    }
-
-    if (isdigit(current_char)) {
-        current_token = integerLiteral(line);
-        return;
-    }
-
-    if (current_char == ':') {
-        getNonBlank(line);
-        advance(line);
-        if (current_char == '=') {
-            advance(line);
-            current_token = createToken(ASSIGN, ":=");
+        factor(line, factor_result);  // Parse the next factor
+        if (strcmp(inherited_value, "Unknown") && strcmp(factor_result, "Unknown")) {
+            int answer = (operator == '*') ? atoi(inherited_value) * atoi(factor_result)
+                                           : atoi(inherited_value) / atoi(factor_result);
+            sprintf(result, "%d", answer);
         } else {
-            current_token = createToken(UNKNOWN, ":");
+            strcpy(result, "Unknown");
         }
-        return;
+        return factor_tail(line, result, result);  // Continue parsing additional factors
     }
-
-    if (current_char == '=') {
-        printOPWarning(5);
-        current_token = createToken(ASSIGN, ":=");
-        advance(line);
-        return;
-    }
-    
-    char lexeme[2] = {current_char, '\0'};
-    
-    switch (current_char) {
-        case '+':
-            advance(line);
-            if (current_char == '+') {
-                printOPWarning(1);
-                advance(line);
-            }
-            current_token = createToken(ADD, lexeme);
-            break;
-            
-        case '-':
-            advance(line);
-            if (current_char == '-') {
-                printOPWarning(2);
-                advance(line);
-            }
-            current_token = createToken(ADD, lexeme);
-            break;
-            
-        case '*':
-            advance(line);
-            if (current_char == '*') {
-                printOPWarning(3);
-                advance(line);
-            }
-            current_token = createToken(MULT, lexeme);
-            break;
-            
-        case '/':
-            advance(line);
-            if (current_char == '/') {
-                printOPWarning(4);
-                advance(line);
-            }
-            current_token = createToken(MULT, lexeme);
-            break;
-            
-        case ';':
-            char lexeme[2] = {current_char, '\0'};
-            current_token = createToken(SEMICOLON, lexeme);
-            advance(line);
-            break;
-            
-        case '(':
-        case ')':
-            current_token = createToken((current_char == '(') ? LPAREN : RPAREN, lexeme);
-            advance(line);
-            break;
-
-        default:
-            current_token = createToken(UNKNOWN, lexeme);
-            advance(line);
-            break;
-    }
+    if (result != inherited_value)
+        strcpy(result, inherited_value);
+    return result;
 }
 
-void advance(char *line) {
-    if (line[pos] != '\0') {
-        current_char = line[pos++];
+// <factor> → <left_paren><expression><right_paren> | <ident> | <const>
+char *factor(char *line, char *result) {
+    if (next_token.type == LPAREN) {
+        lexical(line);  // Consume '('
+        expression(line, result);  // Parse the expression inside parentheses
+        if (next_token.type == RPAREN) {
+            lexical(line);  // Consume ')'
+        }
+    } else if (next_token.type == IDENT) {
+        char *found_val = lookupIdentValue(next_token.token_string);
+        if (!found_val) {
+            strcpy(result, "Unknown");
+        } else {
+            strcpy(result, found_val);
+        }
+        lexical(line);
+    } else if (next_token.type == CONSTANT) {
+        strcpy(result, next_token.token_string);
+        lexical(line);
+    }
+    return result;
+}
+
+
+char *lookupIdentValue(char *name) {
+    for (int i = 0; i < id_tot; i++) {
+        if (!strcmp(idArray[i].name, name)) {
+            return idArray[i].value;
+        }
+    }
+    setIdentValue(name, "Unknown");
+    id_error = 1;
+    strcpy(error_ident, name);
+    return NULL;
+}
+
+void setIdentValue(char *name, char *value) {
+    for (int i = 0; i < id_tot; i++) {
+        if (!strcmp(idArray[i].name, name)) {
+            strcpy(idArray[i].value, value);
+            return;
+        }
+    }
+    strcpy(idArray[id_tot].name, name);
+    strcpy(idArray[id_tot++].value, value);
+}
+
+// LEXER
+// Set current_char to the next non blank char
+void getChar(char *line) {
+    if (line[get_pos] != '\0') {
+        current_char = line[get_pos++];
     } else {
         current_char = '\0';
     }
 }
 
-Token createToken(TokenType type, const char *lexeme) {
+// Concatenate current_char to token_string
+void addChar(char *line) {
+    if (add_pos < 99) {
+        token_string[add_pos++] = current_char;
+        token_string[add_pos] = '\0';
+    }
+}
+
+// Returns the next non blank character
+void getNonBlank(char *line) {
+    while (((int)current_char < 33 && current_char) || isspace(current_char)) {
+        getChar(line);
+    }
+}
+
+// Creates a new token
+Token new_token(TokenType type, char *token_string) {
     Token token;
     token.type = type;
-    strncpy(token.lexeme, lexeme, sizeof(token.lexeme) - 1);
-    token.lexeme[sizeof(token.lexeme) - 1] = '\0';
+    strncpy(token.token_string, token_string, sizeof(token.token_string) - 1);
+    token.token_string[sizeof(token.token_string) - 1] = '\0';
     return token;
 }
 
-Token identifier(char *line) {
-    char lexeme[100];
-    int length = 0;
-
-    while (isalnum(current_char)) {
-        if (length < sizeof(lexeme) - 1) {
-            lexeme[length++] = current_char;
+// Lexical analyzer
+void lexical(char *line) {
+    add_pos = 0;
+    getNonBlank(line);
+    
+    // CONSTANT
+    if (isdigit(current_char)) {
+        while (isdigit(current_char)) {
+            addChar(line);
+            getChar(line);
         }
-        advance(line);
+        const_cnt++;
+        next_token = new_token(CONSTANT, token_string);
+        tokenArray[push_pos++] = next_token;
     }
-    lexeme[length] = '\0';
-    return createToken(IDENT, lexeme);
-}
-
-Token integerLiteral(char *line) {
-    char lexeme[100];
-    int length = 0;
-
-    while (isdigit(current_char)) {
-        if (length < sizeof(lexeme) - 1) {
-            lexeme[length++] = current_char;
+    
+    // IDENT
+    else if (isalpha(current_char)) {
+        while (isalnum(current_char)) {
+            addChar(line);
+            getChar(line);
         }
-        advance(line);
+        id_cnt++;
+        next_token = new_token(IDENT, token_string);
+        tokenArray[push_pos++] = next_token;
     }
-    lexeme[length] = '\0';
-    return createToken(INT_LIT, lexeme);
-}
-
-int lookupIdentValue(char *name) {
-    for (int i = 0; i < id_count; i++) {
-        if (strcmp(idArray[i].name, name) == 0) {
-            return idArray[i].value;
+    
+    // LPAREN
+    else if (current_char == '(') {
+        getChar(line);
+        next_token = new_token(LPAREN, "(");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    // RPAREN
+    else if (current_char == ')') {
+        getChar(line);
+        next_token = new_token(RPAREN, ")");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    // SEMICOLON
+    else if (current_char == ';') {
+        getChar(line);
+        next_token = new_token(SEMICOLON, ";");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    // ADD_OP
+    else if (current_char == '+') {
+        getChar(line);
+        getNonBlank(line);
+        if (current_char == '+') {
+            id_warning = 1;
+            getChar(line);
+        }
+        op_cnt++;
+        next_token = new_token(ADD_OP, "+");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    else if (current_char == '-') {
+        getChar(line);
+        getNonBlank(line);
+        if (current_char == '-') {
+            id_warning = 2;
+            getChar(line);
+        }
+        op_cnt++;
+        next_token = new_token(ADD_OP, "-");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    // MULT_OP
+    else if (current_char == '*') {
+        getChar(line);
+        getNonBlank(line);
+        if (current_char == '*') {
+            id_warning = 3;
+            getChar(line);
+        }
+        op_cnt++;
+        next_token = new_token(MULT_OP, "*");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    else if (current_char == '/') {
+        getChar(line);
+        getNonBlank(line);
+        if (current_char == '/') {
+            id_warning = 4;
+            getChar(line);
+        }
+        op_cnt++;
+        next_token = new_token(ADD_OP, "/");
+        tokenArray[push_pos++] = next_token;
+    }
+    
+    // ASSIGN_OP
+    else if (current_char == '=' || current_char == ':') {
+        if (current_char == '=') {
+            getChar(line);
+            id_warning = 5;
+            next_token = new_token(ASSIGN_OP, ":=");
+            tokenArray[push_pos++] = next_token;
+        }
+        else if (current_char == ':') {
+            getChar(line);
+            if (current_char == '=') {
+                getChar(line);
+                next_token = new_token(ASSIGN_OP, ":=");
+                tokenArray[push_pos++] = next_token;
+            }
         }
     }
-    printIDError(name);
-    return 0;
-}
-
-void setIdentValue(char *name, int value) {
-    for (int i = 0; i < id_count; i++) {
-        if (strcmp(idArray[i].name, name) == 0) {
-            idArray[i].value = value;
-            return;
+    
+    // UNKNOWN
+    else {
+        while (current_char > 32 && current_char != ' ') {
+            addChar(line);
+            getChar(line);
         }
+        next_token = new_token(UNKNOWN, token_string);
     }
-    strcpy(idArray[id_count].name, name);
-    idArray[id_count].value = value;
-    id_count++;
 }
