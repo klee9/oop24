@@ -23,11 +23,37 @@ IDirect3DDevice9* Device = NULL;
 const int Width  = 1024;
 const int Height = 768;
 
-// There are four balls
-// initialize the position (coordinate) of each ball (ball0 ~ ball3)
-const float spherePos[4][2] = { {-2.7f,0} , {+2.4f,0} , {3.3f,0} , {-2.7f,-0.9f}}; 
+// counts of balls and walls
+const int ball_cnt = 56;
+const int wall_cnt = 4;
+const float d = 0.45;
+float top_x = -3.8f;
+float top_y = -1.75f;
+float bot_y = -1.75f;
+float left_x = top_x + 2*d;
+float right_x = top_x + 2*d;
+float left_y = top_y - 2*d;
+float right_y = top_y + 9*d;
+float bot_x = top_x + 13*d;
+
+// Initialize ball positions
+const float spherePos[ball_cnt][2] = { {3.5f,-1},{4.3f,-1},{top_x+d,top_y+d*8},{top_x+d,top_y-d},{left_x+10*d,left_y+d},{right_x+10*d,right_y-d},
+									   {top_x,top_y},{top_x,top_y+d},{top_x,top_y+2*d},{top_x,top_y+3*d},{top_x,top_y+4*d},{top_x,top_y+5*d},{top_x,top_y+6*d},{top_x,top_y+7*d},
+									   {bot_x,bot_y},{bot_x,bot_y+d},{bot_x,bot_y+2*d},{bot_x,bot_y+3*d},{bot_x,bot_y+4*d},{bot_x,bot_y+5*d},{bot_x,bot_y+6*d},{bot_x,bot_y+7*d},
+									   {left_x,left_y},{left_x+d,left_y},{left_x+2*d,left_y},{left_x+3*d,left_y},{left_x+4*d,left_y},{left_x+5*d,left_y},{left_x+6*d,left_y},{left_x+7*d,left_y},{left_x+8*d,left_y},{left_x+9*d,left_y},
+									   {right_x,right_y},{right_x+d,right_y},{right_x+2*d,right_y},{right_x+3*d,right_y},{right_x+4*d,right_y},{right_x+5*d,right_y},{right_x+6*d,right_y},{right_x+7*d,right_y},{right_x+8*d,right_y},{right_x+9*d,right_y},
+									   {left_x+6*d,left_y+2*d},{left_x+7*d,left_y+3*d},{left_x+8*d,left_y+4*d},{left_x+8*d,left_y+5*d},{left_x+8*d,left_y+6*d},{left_x+8*d,left_y+7*d},{left_x+7*d,left_y+8*d},{left_x+6*d,left_y+9*d},
+									   {left_x+d,left_y+3*d},{left_x+2*d,left_y+3*d},{left_x+4*d,left_y+5*d},{left_x+5*d,left_y+5*d},{left_x+d,left_y+8*d},{left_x+2*d,left_y+8*d}
+									 };
 // initialize the color of each ball (ball0 ~ ball3)
-const D3DXCOLOR sphereColor[4] = {d3d::RED, d3d::RED, d3d::YELLOW, d3d::WHITE};
+const D3DXCOLOR sphereColor[ball_cnt] = {d3d::RED,d3d::WHITE,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+									     d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW
+										};
 
 // -----------------------------------------------------------------------------
 // Transform matrices
@@ -363,8 +389,8 @@ private:
 // Global variables
 // -----------------------------------------------------------------------------
 CWall	g_legoPlane;
-CWall	g_legowall[4];
-CSphere	g_sphere[4];
+CWall	g_legowall[wall_cnt];
+CSphere	g_sphere[ball_cnt];
 CSphere	g_target_blueball;
 CLight	g_light;
 
@@ -383,15 +409,15 @@ void destroyAllLegoBlock(void)
 bool Setup()
 {
 	int i;
-	
-    D3DXMatrixIdentity(&g_mWorld);
-    D3DXMatrixIdentity(&g_mView);
-    D3DXMatrixIdentity(&g_mProj);
-		
+
+	D3DXMatrixIdentity(&g_mWorld);
+	D3DXMatrixIdentity(&g_mView);
+	D3DXMatrixIdentity(&g_mProj);
+
 	// create plane and set the position
-    if (false == g_legoPlane.create(Device, -1, -1, 9, 0.03f, 6, d3d::GREEN)) return false;
-    g_legoPlane.setPosition(0.0f, -0.0006f / 5, 0.0f);
-	
+	if (false == g_legoPlane.create(Device, -1, -1, 9, 0.03f, 6, d3d::GREEN)) return false;
+	g_legoPlane.setPosition(0.0f, -0.0006f / 5, 0.0f);
+
 	// create walls and set the position. note that there are four walls
 	if (false == g_legowall[0].create(Device, -1, -1, 9, 0.3f, 0.12f, d3d::DARKRED)) return false;
 	g_legowall[0].setPosition(0.0f, 0.12f, 3.06f);
@@ -403,7 +429,7 @@ bool Setup()
 	g_legowall[3].setPosition(-4.56f, 0.12f, 0.0f);
 
 	// create four balls and set the position
-	for (i=0;i<4;i++) {
+	for (i=0;i<ball_cnt;i++) {
 		if (false == g_sphere[i].create(Device, sphereColor[i])) return false;
 		g_sphere[i].setCenter(spherePos[i][0], (float)M_RADIUS , spherePos[i][1]);
 		g_sphere[i].setPower(0,0);
@@ -452,7 +478,7 @@ bool Setup()
 void Cleanup(void)
 {
     g_legoPlane.destroy();
-	for(int i = 0 ; i < 4; i++) {
+	for(int i = 0 ; i < wall_cnt; i++) {
 		g_legowall[i].destroy();
 	}
     destroyAllLegoBlock();
@@ -474,14 +500,14 @@ bool Display(float timeDelta)
 		Device->BeginScene();
 		
 		// update the position of each ball. during update, check whether each ball hit by walls.
-		for( i = 0; i < 4; i++) {
+		for( i = 0; i < ball_cnt; i++) {
 			g_sphere[i].ballUpdate(timeDelta);
-			for(j = 0; j < 4; j++){ g_legowall[i].hitBy(g_sphere[j]); }
+			for(j = 0; j < wall_cnt; j++){ g_legowall[i].hitBy(g_sphere[j]); }
 		}
 
 		// check whether any two balls hit together and update the direction of balls
-		for(i = 0 ;i < 4; i++){
-			for(j = 0 ; j < 4; j++) {
+		for(i = 0 ;i < ball_cnt; i++){
+			for(j = 0 ; j < wall_cnt; j++) {
 				if(i >= j) {continue;}
 				g_sphere[i].hitBy(g_sphere[j]);
 			}
@@ -489,8 +515,10 @@ bool Display(float timeDelta)
 
 		// draw plane, walls, and spheres
 		g_legoPlane.draw(Device, g_mWorld);
-		for (i=0;i<4;i++) 	{
+		for (i = 0; i < wall_cnt; i++) 	{
 			g_legowall[i].draw(Device, g_mWorld);
+		}
+		for (i = 0; i < ball_cnt; i++) {
 			g_sphere[i].draw(Device, g_mWorld);
 		}
 		g_target_blueball.draw(Device, g_mWorld);
