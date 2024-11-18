@@ -19,6 +19,8 @@
 
 IDirect3DDevice9* Device = NULL;
 
+using namespace std;
+
 // window size
 const int Width  = 1024;
 const int Height = 768;
@@ -27,24 +29,12 @@ const int Height = 768;
 const int ball_cnt = 56;
 const int wall_cnt = 4;
 const float d = 0.45;
-float top_x = -3.8f;
-float top_y = -1.75f;
-float bot_y = -1.75f;
-float left_x = top_x + 2*d;
-float right_x = top_x + 2*d;
-float left_y = top_y - 2*d;
-float right_y = top_y + 9*d;
-float bot_x = top_x + 13*d;
 
 // Initialize ball positions
 const float spherePos[ball_cnt][2] = { {3.5f,-1},{4.3f,-1},{top_x+d,top_y+d*8},{top_x+d,top_y-d},{left_x+10*d,left_y+d},{right_x+10*d,right_y-d},
-									   {top_x,top_y},{top_x,top_y+d},{top_x,top_y+2*d},{top_x,top_y+3*d},{top_x,top_y+4*d},{top_x,top_y+5*d},{top_x,top_y+6*d},{top_x,top_y+7*d},
-									   {bot_x,bot_y},{bot_x,bot_y+d},{bot_x,bot_y+2*d},{bot_x,bot_y+3*d},{bot_x,bot_y+4*d},{bot_x,bot_y+5*d},{bot_x,bot_y+6*d},{bot_x,bot_y+7*d},
-									   {left_x,left_y},{left_x+d,left_y},{left_x+2*d,left_y},{left_x+3*d,left_y},{left_x+4*d,left_y},{left_x+5*d,left_y},{left_x+6*d,left_y},{left_x+7*d,left_y},{left_x+8*d,left_y},{left_x+9*d,left_y},
-									   {right_x,right_y},{right_x+d,right_y},{right_x+2*d,right_y},{right_x+3*d,right_y},{right_x+4*d,right_y},{right_x+5*d,right_y},{right_x+6*d,right_y},{right_x+7*d,right_y},{right_x+8*d,right_y},{right_x+9*d,right_y},
-									   {left_x+6*d,left_y+2*d},{left_x+7*d,left_y+3*d},{left_x+8*d,left_y+4*d},{left_x+8*d,left_y+5*d},{left_x+8*d,left_y+6*d},{left_x+8*d,left_y+7*d},{left_x+7*d,left_y+8*d},{left_x+6*d,left_y+9*d},
 									   {left_x+d,left_y+3*d},{left_x+2*d,left_y+3*d},{left_x+4*d,left_y+5*d},{left_x+5*d,left_y+5*d},{left_x+d,left_y+8*d},{left_x+2*d,left_y+8*d}
 									 };
+
 // initialize the color of each ball (ball0 ~ ball3)
 const D3DXCOLOR sphereColor[ball_cnt] = {d3d::RED,d3d::WHITE,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
@@ -54,6 +44,37 @@ const D3DXCOLOR sphereColor[ball_cnt] = {d3d::RED,d3d::WHITE,d3d::YELLOW,d3d::YE
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW
 										};
+
+vector<pair<float, float>> spherePos;
+vector<D3DXCOLOR> sphereColor(d3d::YELLOW); // Initialize all balls to yellow then change 2 balls later
+
+void initSpheres() 
+{
+	// Initial values
+	float top_x = -3.8f;
+	float top_y = -1.75f;
+	float bot_y = -1.75f;
+	float left_x = top_x + 2*d;
+	float right_x = top_x + 2*d;
+	float left_y = top_y - 2*d;
+	float right_y = top_y + 9*d;
+	float bot_x = top_x + 13*d;
+	
+	// Top and bottom 8 balls
+	for (int i = 0; i < 8; i++) {
+		spherePos.emplace_back(top_x, top_y + i*d);
+		spherePos.emplace_back(bot_x, bot_y + i*d);
+	}
+
+	// Left and right 10 balls
+	for (int i = 0; i < 10; i++) {
+		spherePos.emplace_back(left_x + i*d, left_y); 
+		spherePos.emplace_back(right_x + i*d, right_y);
+	}
+
+	// Custom positions
+	spherePos.emplace_back();
+}
 
 // -----------------------------------------------------------------------------
 // Transform matrices
@@ -637,7 +658,7 @@ int WINAPI WinMain(HINSTANCE hinstance,
 				   int showCmd)
 {
     srand(static_cast<unsigned int>(time(NULL)));
-	
+	initSpherePos();
 	if(!d3d::InitD3D(hinstance,
 		Width, Height, true, D3DDEVTYPE_HAL, &Device))
 	{
