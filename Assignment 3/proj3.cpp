@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 
 IDirect3DDevice9* Device = NULL;
 
@@ -88,7 +89,7 @@ private :
     float                   m_radius;
 	float					m_velocity_x;
 	float					m_velocity_z;
-	bool					m_active;
+	D3DXCOLOR				m_color;
 
 public:
     CSphere(void)
@@ -99,7 +100,7 @@ public:
 		m_velocity_x = 0;
 		m_velocity_z = 0;
         m_pSphereMesh = NULL;
-		m_active = true;
+		m_color = d3d::WHITE;
     }
     ~CSphere(void) {}
 
@@ -127,14 +128,6 @@ public:
         }
     }
 
-	bool isActive() const { return m_active; }
-
-	void deactivate()
-	{
-		m_active = false; // Mark this ball as inactive
-		setPower(0.0f, 0.0f); // Stop its movement
-	}
-
     void draw(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
     {
         if (NULL == pDevice)
@@ -146,60 +139,35 @@ public:
     }
 	
 	bool hasIntersected(CSphere& other) {
-		D3DXVECTOR3 thisCenter = getCenter();
-		D3DXVECTOR3 otherCenter = other.getCenter();
-		float distance = D3DXVec3Length(&(thisCenter - otherCenter));
+		D3DXVECTOR3 this_center = getCenter();
+		D3DXVECTOR3 other_center = other.getCenter();
+		float distance = D3DXVec3Length(&(this_center - other_center));
 		return distance < (getRadius() + other.getRadius());
 	}
 	
-	
 	void hitBy(CSphere& other, CSphere g_sphere[ball_cnt])
 	{
-		if (!isActive() || !other.isActive()) return; // Skip if either ball is inactive
-
 		if (hasIntersected(other)) {
-			// Handle red ball's behavior (g_sphere[0])
-			if (this == &g_sphere[0]) {
-				// If red ball hits the white ball (g_sphere[1])
-				if (&other == &g_sphere[1]) {
-					// Bounce back the red ball (invert velocity)
-					m_velocity_x = -m_velocity_x;
-					m_velocity_z = -m_velocity_z;
-					return;
-				}
-
-				// Otherwise, exchange velocity with the other ball
-				float vx = m_velocity_x;
-				float vz = m_velocity_z;
-
-				m_velocity_x = other.getVelocity_X();
-				m_velocity_z = other.getVelocity_Z();
-
-				other.setPower(vx, vz);
-
-				// Remove the other ball (if it's yellow)
-				for (int i = 0; i < ball_cnt; ++i) {
-					if (&g_sphere[i] == &other && sphereColor[i] == d3d::YELLOW) {
-						g_sphere[i].deactivate();
-						g_score += 100; // Update score for hitting a yellow ball
-						break;
-					}
-				}
+			// red-white interaction
+			if (this->m_color == d3d::WHITE && other.m_color == d3d::RED) {
+				other.m_velocity_x = -other.m_velocity_x;
+				other.m_velocity_z = -other.m_velocity_z;
+				return;
 			}
-			else {
-				// Handle non-red balls (they should be removed upon collision)
-				for (int i = 0; i < ball_cnt; ++i) {
-					if (&g_sphere[i] == this) {
-						g_sphere[i].deactivate();
-						g_score += 50; // Update score for removing a yellow ball
-						break;
-					}
-				}
+
+			// red-yellow interaction
+			if (this->m_color == d3d::YELLOW && other.m_color == d3d::RED) {
+				float temp_vx = other.m_velocity_x;
+				float temp_vz = other.m_velocity_z;
+
+				other.m_velocity_x = -m_velocity_x;
+				other.m_velocity_z = -m_velocity_z;
+
+				other.setPower(temp_vx, temp_vz);
+				g_score += 100; // Update score
 			}
 		}
 	}
-
-
 
 	void ballUpdate(float timeDiff)
 	{
@@ -362,7 +330,6 @@ public:
 	void hitBy(CSphere& ball) {
 		if (hasIntersected(ball)) {
 			ball.setPower(-ball.getVelocity_X(), -ball.getVelocity_Z());
-			g_score += 100;
 		}
 	}
 
@@ -608,7 +575,6 @@ bool Display(float timeDelta)
 
 		// Update the position of each ball
 		for (int i = 0; i < ball_cnt; ++i) {
-			if (!g_sphere[i].isActive()) continue; // Skip inactive balls
 			g_sphere[i].ballUpdate(timeDelta);
 
 			// Check collisions with walls
@@ -619,10 +585,7 @@ bool Display(float timeDelta)
 
 		// Check collisions between balls
 		for (int i = 0; i < ball_cnt; ++i) {
-			if (!g_sphere[i].isActive()) continue; // Skip inactive balls
-
 			for (int j = i + 1; j < ball_cnt; ++j) {
-				if (!g_sphere[j].isActive()) continue; // Skip inactive balls
 				g_sphere[i].hitBy(g_sphere[j], g_sphere);
 			}
 		}
