@@ -147,6 +147,8 @@ public:
 	
 	void hitBy(CSphere& other, CSphere *g_sphere)
 	{
+   // This whole thing should be execd when
+   // other = red ball. 
 		if (hasIntersected(other)) {
 			D3DXVECTOR3 vec = other.getCenter() - this->getCenter();
 			D3DXVec3Normalize(&vec, &vec);
