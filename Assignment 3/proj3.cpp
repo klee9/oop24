@@ -38,7 +38,7 @@ RECT rectStart, rectLives, rectScore;
 // counts of balls and walls
 const int ball_cnt = 56;
 const int wall_cnt = 3;
-const float d = 0.45;
+const float d = 0.4;
 float top_x = -3.8f;
 float top_y = -1.55f;
 float bot_y = -1.55f;
@@ -89,7 +89,6 @@ private :
     float                   m_radius;
 	float					m_velocity_x;
 	float					m_velocity_z;
-	D3DXCOLOR				m_color;
 
 public:
     CSphere(void)
@@ -100,7 +99,6 @@ public:
 		m_velocity_x = 0;
 		m_velocity_z = 0;
         m_pSphereMesh = NULL;
-		m_color = d3d::WHITE;
     }
     ~CSphere(void) {}
 
@@ -138,31 +136,31 @@ public:
 		m_pSphereMesh->DrawSubset(0);
     }
 	
-	bool hasIntersected(CSphere& other) {
+	bool hasIntersected(CSphere& red) {
 		D3DXVECTOR3 this_center = getCenter();
-		D3DXVECTOR3 other_center = other.getCenter();
-		float dist = D3DXVec3Length(&(this_center - other_center));
-		return (dist <= (getRadius() + other.getRadius()));
+		D3DXVECTOR3 red_center = red.getCenter();
+		float dist = D3DXVec3Length(&(this_center - red_center));
+		return (dist <= (getRadius() + red.getRadius()));
 	}
 	
 	void hitBy(CSphere& other, CSphere *g_sphere)
 	{
-   // This whole thing should be execd when
-   // other = red ball. 
-		if (hasIntersected(other)) {
-			D3DXVECTOR3 vec = other.getCenter() - this->getCenter();
-			D3DXVec3Normalize(&vec, &vec);
+		if (&other == &g_sphere[0]) {
+			if (hasIntersected(other)) {
+				D3DXVECTOR3 vec = other.getCenter() - this->getCenter();
+				D3DXVec3Normalize(&vec, &vec);
 
-			D3DXVECTOR3 v_red(other.getVelocity_X(), 0, other.getVelocity_Z());
+				D3DXVECTOR3 v_red(other.getVelocity_X(), 0, other.getVelocity_Z());
 
-			float dot_product = D3DXVec3Dot(&v_red, &vec);
-			D3DXVECTOR3 reflectedVelocity = v_red - 2 * dot_product * vec;
+				float dot_product = D3DXVec3Dot(&v_red, &vec);
+				D3DXVECTOR3 reflectedVelocity = v_red - 2 * dot_product * vec;
 
-			if (this != &g_sphere[0] && this != &g_sphere[1] && &other == &g_sphere[0]) {
-				this->setCenter(100.0f, 0.0f, 0.0f);
-				g_score += 100;
+				if (this != &g_sphere[0] && this != &g_sphere[1]) {
+					this->setCenter(100.0f, 0.0f, 0.0f);
+					g_score += 100;
+				}
+				other.setPower(reflectedVelocity.x, reflectedVelocity.z);
 			}
-			if (&other == &g_sphere[0]) other.setPower(reflectedVelocity.x, reflectedVelocity.z);
 		}
 	}
 
@@ -173,24 +171,33 @@ public:
 		double vx = abs(this->getVelocity_X());
 		double vz = abs(this->getVelocity_Z());
 
-		if (vx > 0.01 || vz > 0.01)
-		{
+		if (vx > 0.01 || vz > 0.01) {
 			float tX = cord.x + TIME_SCALE * timeDiff * m_velocity_x;
-			float tZ = cord.z + TIME_SCALE * timeDiff * m_velocity_z; 
+			float tZ = cord.z + TIME_SCALE * timeDiff * m_velocity_z;
 
-			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5)
-			{
+			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5) {
 				g_lives--;
 				if (!g_lives) {
-					//reset game
+					std::string endmsg = "Game Over!! (Final Score: " + std::to_string(g_score) + ")";
+					const char* n_endmsg = endmsg.c_str();
+					int result = MessageBox(
+						NULL,
+						n_endmsg,
+						"Game Manager",
+						MB_OK | MB_ICONEXCLAMATION
+					);
+
+					if (result == IDOK) exit(0);
 				}
-				setCenter(g_sphere[1].getCenter().x - 0.5, 0.0f, g_sphere[1].getCenter().z);
-				setPower(0.0, 0.0);
-				game_started = !game_started;
+
+				g_sphere[0].setCenter(g_sphere[1].getCenter().x - 0.5, 0.0f, g_sphere[1].getCenter().z);
+				g_sphere[0].setPower(0.0, 0.0);
+				game_started = false;
 				return;
 			}
 			this->setCenter(tX, cord.y, tZ);
 		}
+
 	}
 
 	double getVelocity_X() { return this->m_velocity_x;	}
@@ -604,6 +611,20 @@ bool Display(float timeDelta)
 		const char* score = score_txt.c_str();
 		g_font->DrawText(NULL, score, -1, &rectScore, DT_RIGHT | DT_TOP, D3DCOLOR_XRGB(0, 0, 0));
 
+		// Calculate velocity magnitude
+		double vx = g_sphere[0].getVelocity_X();
+		double vz = g_sphere[0].getVelocity_Z();
+		double velocityMagnitude = std::sqrt(vx * vx + vz * vz);  // Magnitude formula
+
+		// Format the string
+		std::string postxt = "velo: " + std::to_string(vx) + ", " + std::to_string(vz);
+		std::string magtxt = "game: " + std::to_string(velocityMagnitude);
+		const char* post = postxt.c_str();
+		const char* mag = magtxt.c_str();
+		// Draw text
+		g_font->DrawText(NULL, post, -1, &rectScore, DT_RIGHT | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
+		g_font->DrawText(NULL, mag, -1, &rectLives, DT_RIGHT | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
+
 		// draw "Press Space to START" label
 		if (!game_started) {
 			g_font->DrawText(NULL, "Press Space to START", -1, &rectStart, DT_CENTER | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
@@ -637,12 +658,12 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			::DestroyWindow(hwnd);
 			break;
 		case VK_SPACE:
-			if (!game_started)
-				g_sphere[0].setPower(-3.0f, 0.0f);
-			game_started = true;
+			if (!game_started) {
+				g_sphere[0].setPower(-2.0f, 0.0f);
+				game_started = true;
+			}
 			break;
 		}
-		break;
 	}
 
 	case WM_MOUSEMOVE:
