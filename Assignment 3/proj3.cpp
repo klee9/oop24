@@ -114,7 +114,7 @@ public:
         m_mtrl.Specular = color;
         m_mtrl.Emissive = d3d::BLACK;
         m_mtrl.Power    = 5.0f;
-		
+
         if (FAILED(D3DXCreateSphere(pDevice, getRadius(), 50, 50, &m_pSphereMesh, NULL)))
             return false;
         return true;
@@ -141,35 +141,30 @@ public:
 	bool hasIntersected(CSphere& other) {
 		D3DXVECTOR3 this_center = getCenter();
 		D3DXVECTOR3 other_center = other.getCenter();
-		float distance = D3DXVec3Length(&(this_center - other_center));
-		return distance < (getRadius() + other.getRadius());
+		float dist = D3DXVec3Length(&(this_center - other_center));
+		return (dist <= (getRadius() + other.getRadius()));
 	}
 	
-	void hitBy(CSphere& other, CSphere g_sphere[ball_cnt])
+	void hitBy(CSphere& other, CSphere *g_sphere)
 	{
 		if (hasIntersected(other)) {
-			// red-white interaction
-			if (this->m_color == d3d::WHITE && other.m_color == d3d::RED) {
-				other.m_velocity_x = -other.m_velocity_x;
-				other.m_velocity_z = -other.m_velocity_z;
-				return;
+			D3DXVECTOR3 vec = other.getCenter() - this->getCenter();
+			D3DXVec3Normalize(&vec, &vec);
+
+			D3DXVECTOR3 v_red(other.getVelocity_X(), 0, other.getVelocity_Z());
+
+			float dot_product = D3DXVec3Dot(&v_red, &vec);
+			D3DXVECTOR3 reflectedVelocity = v_red - 2 * dot_product * vec;
+
+			if (this != &g_sphere[0] && this != &g_sphere[1] && &other == &g_sphere[0]) {
+				this->setCenter(100.0f, 0.0f, 0.0f);
+				g_score += 100;
 			}
-
-			// red-yellow interaction
-			if (this->m_color == d3d::YELLOW && other.m_color == d3d::RED) {
-				float temp_vx = other.m_velocity_x;
-				float temp_vz = other.m_velocity_z;
-
-				other.m_velocity_x = -m_velocity_x;
-				other.m_velocity_z = -m_velocity_z;
-
-				other.setPower(temp_vx, temp_vz);
-				g_score += 100; // Update score
-			}
+			if (&other == &g_sphere[0]) other.setPower(reflectedVelocity.x, reflectedVelocity.z);
 		}
 	}
 
-	void ballUpdate(float timeDiff)
+	void ballUpdate(float timeDiff, CSphere *g_sphere)
 	{
 		const float TIME_SCALE = 3.3;
 		D3DXVECTOR3 cord = this->getCenter();
@@ -179,41 +174,22 @@ public:
 		if (vx > 0.01 || vz > 0.01)
 		{
 			float tX = cord.x + TIME_SCALE * timeDiff * m_velocity_x;
-			float tZ = cord.z + TIME_SCALE * timeDiff * m_velocity_z;
+			float tZ = cord.z + TIME_SCALE * timeDiff * m_velocity_z; 
 
-			float wallZMin = -3.12f; 
-			float wallZMax = 3.12f;  
-			float wallX = 4.56f;   
-
-			if (tX > wallX && (tZ < wallZMin || tZ > wallZMax))
+			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5)
 			{
 				g_lives--;
-				setCenter(0.0f, cord.y, 0.0f);  
-				setPower(0.0, 0.0);        
+				if (!g_lives) {
+					//reset game
+				}
+				setCenter(g_sphere[1].getCenter().x - 0.5, 0.0f, g_sphere[1].getCenter().z);
+				setPower(0.0, 0.0);
+				game_started = !game_started;
 				return;
 			}
-
-			if (tX >= (4.5 - M_RADIUS))
-				tX = 4.5 - M_RADIUS;
-			else if (tX <= (-4.5 + M_RADIUS))
-				tX = -4.5 + M_RADIUS;
-			else if (tZ <= (-3 + M_RADIUS))
-				tZ = -3 + M_RADIUS;
-
 			this->setCenter(tX, cord.y, tZ);
 		}
-		else
-		{
-			this->setPower(0, 0);
-		}
-
-		double rate = 1 - (1 - DECREASE_RATE) * timeDiff * 400;
-		if (rate < 0)
-			rate = 0;
-		this->setPower(getVelocity_X() * rate, getVelocity_Z() * rate);
 	}
-
-
 
 	double getVelocity_X() { return this->m_velocity_x;	}
 	double getVelocity_Z() { return this->m_velocity_z; }
@@ -314,22 +290,23 @@ public:
 		D3DXVECTOR3 ballCenter = ball.getCenter();
 		float ballRadius = ball.getRadius();
 
-		// calculate the bounds of the wall
-		float left = m_x - m_width / 2.0f;
-		float right = m_x + m_width / 2.0f;
-		float top = m_z - m_depth / 2.0f;
-		float bottom = m_z + m_depth / 2.0f;
-
-		// check if the ball intersects the wall
-		return (ballCenter.x + ballRadius > left &&
-			ballCenter.x - ballRadius < right &&
-			ballCenter.z + ballRadius > top &&
-			ballCenter.z - ballRadius < bottom);
+		if (this->m_x == 0) {
+			if (this->m_z < 0) // left wall
+				return (ballCenter.z - ballRadius <= m_z + m_depth/2);
+			if (this->m_z > 0) // right wall
+				return (ballCenter.z + ballRadius >= m_z - m_depth/2);
+		}
+		else { // top wall
+			return (ballCenter.x - ballRadius <= m_x + m_width / 2);
+		}
 	}
 
 	void hitBy(CSphere& ball) {
 		if (hasIntersected(ball)) {
-			ball.setPower(-ball.getVelocity_X(), -ball.getVelocity_Z());
+			if (this->m_x == 0)
+				ball.setPower(ball.getVelocity_X(), -ball.getVelocity_Z());
+			else
+				ball.setPower(-ball.getVelocity_X(), ball.getVelocity_Z());
 		}
 	}
 
@@ -558,6 +535,19 @@ void Cleanup(void)
 	}
 }
 
+void resetGame()
+{
+	g_lives = 5;
+	g_score = 0;
+	game_started = false;
+
+	for (int i = 0; i < ball_cnt; i++) {
+		g_sphere[i].setCenter(spherePos[i][0], (float)M_RADIUS, spherePos[i][1]);
+		g_sphere[i].setPower(0.0f, 0.0f); // Reset velocities
+	}
+
+	g_sphere[0].setPower(-3.0f, 0.0f);
+}
 
 // timeDelta represents the time between the current image frame and the last image frame.
 // the distance of moving balls should be "velocity * timeDelta"
@@ -571,21 +561,18 @@ bool Display(float timeDelta)
 	{
 		Device->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00afafaf, 1.0f, 0);
 		Device->BeginScene();
-	
 
 		// Update the position of each ball
 		for (int i = 0; i < ball_cnt; ++i) {
-			g_sphere[i].ballUpdate(timeDelta);
+			g_sphere[i].ballUpdate(timeDelta, g_sphere);
 
 			// Check collisions with walls
 			for (int j = 0; j < wall_cnt; ++j) {
 				g_legowall[j].hitBy(g_sphere[i]);
 			}
-		}
 
-		// Check collisions between balls
-		for (int i = 0; i < ball_cnt; ++i) {
-			for (int j = i + 1; j < ball_cnt; ++j) {
+			for (int j = 0; j < ball_cnt; ++j) {
+				if (i == j) continue;
 				g_sphere[i].hitBy(g_sphere[j], g_sphere);
 			}
 		}
@@ -648,8 +635,9 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			::DestroyWindow(hwnd);
 			break;
 		case VK_SPACE:
+			if (!game_started)
+				g_sphere[0].setPower(-3.0f, 0.0f);
 			game_started = true;
-			g_sphere[0].setPower(-5.0f, 0.0f);
 			break;
 		}
 		break;
@@ -657,18 +645,18 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 	{
+		int new_x = LOWORD(lParam);
+
+		float normalized_z = (float(new_x) / Height) * 6.0f - 3.0f;
+		float wall_min_z = -3.0f + g_sphere[0].getRadius();
+		float wall_max_z = 3.0f - g_sphere[0].getRadius();
+
+		normalized_z = std::max(wall_min_z, std::min(normalized_z, wall_max_z));
+
 		if (!game_started) {
-			int new_x = LOWORD(lParam);
-
-			float normalized_z = (float(new_x) / Height) * 6.0f - 3.0f;
-			float wall_min_z = -3.0f + g_sphere[0].getRadius();
-			float wall_max_z = 3.0f - g_sphere[0].getRadius();
-
-			normalized_z = std::max(wall_min_z, std::min(normalized_z, wall_max_z));
-
 			g_sphere[0].setCenter(g_sphere[0].getCenter().x, g_sphere[0].getCenter().y, normalized_z);
-			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, normalized_z);
 		}
+		g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, normalized_z);
 		break;
 	}
 	}
