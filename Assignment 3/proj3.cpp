@@ -23,7 +23,7 @@
 IDirect3DDevice9* Device = NULL;
 
 // window size
-const int Width  = 1024;
+const int Width = 1024;
 const int Height = 768;
 
 // score and lives left
@@ -42,30 +42,30 @@ const float d = 0.4;
 float top_x = -3.8f;
 float top_y = -1.55f;
 float bot_y = -1.55f;
-float left_x = top_x + 2*d;
-float right_x = top_x + 2*d;
-float left_y = top_y - 2*d;
-float right_y = top_y + 9*d;
-float bot_x = top_x + 13*d;
+float left_x = top_x + 2 * d;
+float right_x = top_x + 2 * d;
+float left_y = top_y - 2 * d;
+float right_y = top_y + 9 * d;
+float bot_x = top_x + 13 * d;
 
 // Initialize ball positions
-const float spherePos[ball_cnt][2] = { {3.8f,-1},{4.3f,-1},{top_x+d,top_y+d*8},{top_x+d,top_y-d},{left_x+10*d,left_y+d},{right_x+10*d,right_y-d},
-									   {top_x,top_y},{top_x,top_y+d},{top_x,top_y+2*d},{top_x,top_y+3*d},{top_x,top_y+4*d},{top_x,top_y+5*d},{top_x,top_y+6*d},{top_x,top_y+7*d},
-									   {bot_x,bot_y},{bot_x,bot_y+d},{bot_x,bot_y+2*d},{bot_x,bot_y+3*d},{bot_x,bot_y+4*d},{bot_x,bot_y+5*d},{bot_x,bot_y+6*d},{bot_x,bot_y+7*d},
-									   {left_x,left_y},{left_x+d,left_y},{left_x+2*d,left_y},{left_x+3*d,left_y},{left_x+4*d,left_y},{left_x+5*d,left_y},{left_x+6*d,left_y},{left_x+7*d,left_y},{left_x+8*d,left_y},{left_x+9*d,left_y},
-									   {right_x,right_y},{right_x+d,right_y},{right_x+2*d,right_y},{right_x+3*d,right_y},{right_x+4*d,right_y},{right_x+5*d,right_y},{right_x+6*d,right_y},{right_x+7*d,right_y},{right_x+8*d,right_y},{right_x+9*d,right_y},
-									   {left_x+6*d,left_y+2*d},{left_x+7*d,left_y+3*d},{left_x+8*d,left_y+4*d},{left_x+8*d,left_y+5*d},{left_x+8*d,left_y+6*d},{left_x+8*d,left_y+7*d},{left_x+7*d,left_y+8*d},{left_x+6*d,left_y+9*d},
-									   {left_x+d,left_y+3*d},{left_x+2*d,left_y+3*d},{left_x+4*d,left_y+5*d},{left_x+5*d,left_y+5*d},{left_x+d,left_y+8*d},{left_x+2*d,left_y+8*d}
-									 };
+const float spherePos[ball_cnt][2] = { {3.8f,-1},{4.3f,-1},{top_x + d,top_y + d * 8},{top_x + d,top_y - d},{left_x + 10 * d,left_y + d},{right_x + 10 * d,right_y - d},
+									   {top_x,top_y},{top_x,top_y + d},{top_x,top_y + 2 * d},{top_x,top_y + 3 * d},{top_x,top_y + 4 * d},{top_x,top_y + 5 * d},{top_x,top_y + 6 * d},{top_x,top_y + 7 * d},
+									   {bot_x,bot_y},{bot_x,bot_y + d},{bot_x,bot_y + 2 * d},{bot_x,bot_y + 3 * d},{bot_x,bot_y + 4 * d},{bot_x,bot_y + 5 * d},{bot_x,bot_y + 6 * d},{bot_x,bot_y + 7 * d},
+									   {left_x,left_y},{left_x + d,left_y},{left_x + 2 * d,left_y},{left_x + 3 * d,left_y},{left_x + 4 * d,left_y},{left_x + 5 * d,left_y},{left_x + 6 * d,left_y},{left_x + 7 * d,left_y},{left_x + 8 * d,left_y},{left_x + 9 * d,left_y},
+									   {right_x,right_y},{right_x + d,right_y},{right_x + 2 * d,right_y},{right_x + 3 * d,right_y},{right_x + 4 * d,right_y},{right_x + 5 * d,right_y},{right_x + 6 * d,right_y},{right_x + 7 * d,right_y},{right_x + 8 * d,right_y},{right_x + 9 * d,right_y},
+									   {left_x + 6 * d,left_y + 2 * d},{left_x + 7 * d,left_y + 3 * d},{left_x + 8 * d,left_y + 4 * d},{left_x + 8 * d,left_y + 5 * d},{left_x + 8 * d,left_y + 6 * d},{left_x + 8 * d,left_y + 7 * d},{left_x + 7 * d,left_y + 8 * d},{left_x + 6 * d,left_y + 9 * d},
+									   {left_x + d,left_y + 3 * d},{left_x + 2 * d,left_y + 3 * d},{left_x + 4 * d,left_y + 5 * d},{left_x + 5 * d,left_y + 5 * d},{left_x + d,left_y + 8 * d},{left_x + 2 * d,left_y + 8 * d}
+};
 // initialize the color of each ball (ball0 ~ ball3)
-const D3DXCOLOR sphereColor[ball_cnt] = {d3d::RED,d3d::WHITE,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+const D3DXCOLOR sphereColor[ball_cnt] = { d3d::RED,d3d::WHITE,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
-									     d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
+										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,
 										 d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW,d3d::YELLOW
-										};
+};
 
 // -----------------------------------------------------------------------------
 // Transform matrices
@@ -84,66 +84,66 @@ D3DXMATRIX g_mProj;
 // -----------------------------------------------------------------------------
 
 class CSphere {
-private :
+private:
 	float					center_x, center_y, center_z;
-    float                   m_radius;
+	float                   m_radius;
 	float					m_velocity_x;
 	float					m_velocity_z;
 
 public:
-    CSphere(void)
-    {
-        D3DXMatrixIdentity(&m_mLocal);
-        ZeroMemory(&m_mtrl, sizeof(m_mtrl));
-        m_radius = 0;
+	CSphere(void)
+	{
+		D3DXMatrixIdentity(&m_mLocal);
+		ZeroMemory(&m_mtrl, sizeof(m_mtrl));
+		m_radius = 0;
 		m_velocity_x = 0;
 		m_velocity_z = 0;
-        m_pSphereMesh = NULL;
-    }
-    ~CSphere(void) {}
+		m_pSphereMesh = NULL;
+	}
+	~CSphere(void) {}
 
-    bool create(IDirect3DDevice9* pDevice, D3DXCOLOR color = d3d::WHITE)
-    {
-        if (NULL == pDevice)
-            return false;
-		
-        m_mtrl.Ambient  = color;
-        m_mtrl.Diffuse  = color;
-        m_mtrl.Specular = color;
-        m_mtrl.Emissive = d3d::BLACK;
-        m_mtrl.Power    = 5.0f;
+	bool create(IDirect3DDevice9* pDevice, D3DXCOLOR color = d3d::WHITE)
+	{
+		if (NULL == pDevice)
+			return false;
 
-        if (FAILED(D3DXCreateSphere(pDevice, getRadius(), 50, 50, &m_pSphereMesh, NULL)))
-            return false;
-        return true;
-    }
-	
-    void destroy(void)
-    {
-        if (m_pSphereMesh != NULL) {
-            m_pSphereMesh->Release();
-            m_pSphereMesh = NULL;
-        }
-    }
+		m_mtrl.Ambient = color;
+		m_mtrl.Diffuse = color;
+		m_mtrl.Specular = color;
+		m_mtrl.Emissive = d3d::BLACK;
+		m_mtrl.Power = 5.0f;
 
-    void draw(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
-    {
-        if (NULL == pDevice)
-            return;
-        pDevice->SetTransform(D3DTS_WORLD, &mWorld);
-        pDevice->MultiplyTransform(D3DTS_WORLD, &m_mLocal);
-        pDevice->SetMaterial(&m_mtrl);
+		if (FAILED(D3DXCreateSphere(pDevice, getRadius(), 50, 50, &m_pSphereMesh, NULL)))
+			return false;
+		return true;
+	}
+
+	void destroy(void)
+	{
+		if (m_pSphereMesh != NULL) {
+			m_pSphereMesh->Release();
+			m_pSphereMesh = NULL;
+		}
+	}
+
+	void draw(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
+	{
+		if (NULL == pDevice)
+			return;
+		pDevice->SetTransform(D3DTS_WORLD, &mWorld);
+		pDevice->MultiplyTransform(D3DTS_WORLD, &m_mLocal);
+		pDevice->SetMaterial(&m_mtrl);
 		m_pSphereMesh->DrawSubset(0);
-    }
-	
+	}
+
 	bool hasIntersected(CSphere& red) {
 		D3DXVECTOR3 this_center = getCenter();
 		D3DXVECTOR3 red_center = red.getCenter();
 		float dist = D3DXVec3Length(&(this_center - red_center));
 		return (dist <= (getRadius() + red.getRadius()));
 	}
-	
-	void hitBy(CSphere& other, CSphere *g_sphere)
+
+	void hitBy(CSphere& other, CSphere* g_sphere)
 	{
 		if (&other == &g_sphere[0]) {
 			if (hasIntersected(other)) {
@@ -164,7 +164,7 @@ public:
 		}
 	}
 
-	void ballUpdate(float timeDiff, CSphere *g_sphere)
+	void ballUpdate(float timeDiff, CSphere* g_sphere)
 	{
 		const float TIME_SCALE = 3.3;
 		D3DXVECTOR3 cord = this->getCenter();
@@ -177,7 +177,7 @@ public:
 
 			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5) {
 				g_lives--;
-				if (!g_lives) {
+				if (!g_lives || g_score == 5400) {
 					std::string endmsg = "Game Over!! (Final Score: " + std::to_string(g_score) + ")";
 					const char* n_endmsg = endmsg.c_str();
 					int result = MessageBox(
@@ -190,17 +190,17 @@ public:
 					if (result == IDOK) exit(0);
 				}
 
-				g_sphere[0].setCenter(g_sphere[1].getCenter().x - 0.5, 0.0f, g_sphere[1].getCenter().z);
+				tX = g_sphere[1].getCenter().x - 0.6;
+				tZ = g_sphere[1].getCenter().z;
 				g_sphere[0].setPower(0.0, 0.0);
 				game_started = false;
-				return;
 			}
 			this->setCenter(tX, cord.y, tZ);
 		}
 
 	}
 
-	double getVelocity_X() { return this->m_velocity_x;	}
+	double getVelocity_X() { return this->m_velocity_x; }
 	double getVelocity_Z() { return this->m_velocity_z; }
 
 	void setPower(double vx, double vz)
@@ -212,25 +212,25 @@ public:
 	void setCenter(float x, float y, float z)
 	{
 		D3DXMATRIX m;
-		center_x=x;	center_y=y;	center_z=z;
+		center_x = x;	center_y = y;	center_z = z;
 		D3DXMatrixTranslation(&m, x, y, z);
 		setLocalTransform(m);
 	}
-	
-	float getRadius(void)  const { return (float)(M_RADIUS);  }
-    const D3DXMATRIX& getLocalTransform(void) const { return m_mLocal; }
-    void setLocalTransform(const D3DXMATRIX& mLocal) { m_mLocal = mLocal; }
-    D3DXVECTOR3 getCenter(void) const
-    {
-        D3DXVECTOR3 org(center_x, center_y, center_z);
-        return org;
-    }
-	
+
+	float getRadius(void)  const { return (float)(M_RADIUS); }
+	const D3DXMATRIX& getLocalTransform(void) const { return m_mLocal; }
+	void setLocalTransform(const D3DXMATRIX& mLocal) { m_mLocal = mLocal; }
+	D3DXVECTOR3 getCenter(void) const
+	{
+		D3DXVECTOR3 org(center_x, center_y, center_z);
+		return org;
+	}
+
 private:
-    D3DXMATRIX              m_mLocal;
-    D3DMATERIAL9            m_mtrl;
-    ID3DXMesh*              m_pSphereMesh;
-	
+	D3DXMATRIX              m_mLocal;
+	D3DMATERIAL9            m_mtrl;
+	ID3DXMesh* m_pSphereMesh;
+
 };
 
 
@@ -242,68 +242,68 @@ private:
 class CWall {
 
 private:
-	
-    float					m_x;
+
+	float					m_x;
 	float					m_z;
 	float                   m_width;
-    float                   m_depth;
+	float                   m_depth;
 	float					m_height;
-	
+
 public:
-    CWall(void)
-    {
-        D3DXMatrixIdentity(&m_mLocal);
-        ZeroMemory(&m_mtrl, sizeof(m_mtrl));
-        m_width = 0;
-        m_depth = 0;
-        m_pBoundMesh = NULL;
-    }
-    ~CWall(void) {}
+	CWall(void)
+	{
+		D3DXMatrixIdentity(&m_mLocal);
+		ZeroMemory(&m_mtrl, sizeof(m_mtrl));
+		m_width = 0;
+		m_depth = 0;
+		m_pBoundMesh = NULL;
+	}
+	~CWall(void) {}
 public:
-    bool create(IDirect3DDevice9* pDevice, float ix, float iz, float iwidth, float iheight, float idepth, D3DXCOLOR color = d3d::WHITE)
-    {
-        if (NULL == pDevice)
-            return false;
-		
-        m_mtrl.Ambient  = color;
-        m_mtrl.Diffuse  = color;
-        m_mtrl.Specular = color;
-        m_mtrl.Emissive = d3d::BLACK;
-        m_mtrl.Power    = 5.0f;
-		
-        m_width = iwidth;
-        m_depth = idepth;
-		
-        if (FAILED(D3DXCreateBox(pDevice, iwidth, iheight, idepth, &m_pBoundMesh, NULL)))
-            return false;
-        return true;
-    }
-    void destroy(void)
-    {
-        if (m_pBoundMesh != NULL) {
-            m_pBoundMesh->Release();
-            m_pBoundMesh = NULL;
-        }
-    }
-    void draw(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
-    {
-        if (NULL == pDevice)
-            return;
-        pDevice->SetTransform(D3DTS_WORLD, &mWorld);
-        pDevice->MultiplyTransform(D3DTS_WORLD, &m_mLocal);
-        pDevice->SetMaterial(&m_mtrl);
+	bool create(IDirect3DDevice9* pDevice, float ix, float iz, float iwidth, float iheight, float idepth, D3DXCOLOR color = d3d::WHITE)
+	{
+		if (NULL == pDevice)
+			return false;
+
+		m_mtrl.Ambient = color;
+		m_mtrl.Diffuse = color;
+		m_mtrl.Specular = color;
+		m_mtrl.Emissive = d3d::BLACK;
+		m_mtrl.Power = 5.0f;
+
+		m_width = iwidth;
+		m_depth = idepth;
+
+		if (FAILED(D3DXCreateBox(pDevice, iwidth, iheight, idepth, &m_pBoundMesh, NULL)))
+			return false;
+		return true;
+	}
+	void destroy(void)
+	{
+		if (m_pBoundMesh != NULL) {
+			m_pBoundMesh->Release();
+			m_pBoundMesh = NULL;
+		}
+	}
+	void draw(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
+	{
+		if (NULL == pDevice)
+			return;
+		pDevice->SetTransform(D3DTS_WORLD, &mWorld);
+		pDevice->MultiplyTransform(D3DTS_WORLD, &m_mLocal);
+		pDevice->SetMaterial(&m_mtrl);
 		m_pBoundMesh->DrawSubset(0);
-    }
-	
+	}
+
 	bool hasIntersected(CSphere& ball) {
 		D3DXVECTOR3 ballCenter = ball.getCenter();
 		float ballRadius = ball.getRadius();
 
 		if (this->m_x == 0) {
 			if (this->m_z < 0) // left wall
-				return (ballCenter.z - ballRadius <= m_z + m_depth/2);
+				return (ballCenter.z - ballRadius <= m_z + m_depth / 2);
 			if (this->m_z > 0) // right wall
-				return (ballCenter.z + ballRadius >= m_z - m_depth/2);
+				return (ballCenter.z + ballRadius >= m_z - m_depth / 2);
 		}
 		else { // top wall
 			return (ballCenter.x - ballRadius <= m_x + m_width / 2);
@@ -328,17 +328,17 @@ public:
 		D3DXMatrixTranslation(&m, x, y, z);
 		setLocalTransform(m);
 	}
-	
-    float getHeight(void) const { return M_HEIGHT; }
-	
-	
-	
-private :
-    void setLocalTransform(const D3DXMATRIX& mLocal) { m_mLocal = mLocal; }
-	
+
+	float getHeight(void) const { return M_HEIGHT; }
+
+
+
+private:
+	void setLocalTransform(const D3DXMATRIX& mLocal) { m_mLocal = mLocal; }
+
 	D3DXMATRIX              m_mLocal;
-    D3DMATERIAL9            m_mtrl;
-    ID3DXMesh*              m_pBoundMesh;
+	D3DMATERIAL9            m_mtrl;
+	ID3DXMesh* m_pBoundMesh;
 };
 
 // -----------------------------------------------------------------------------
@@ -347,83 +347,83 @@ private :
 
 class CLight {
 public:
-    CLight(void)
-    {
-        static DWORD i = 0;
-        m_index = i++;
-        D3DXMatrixIdentity(&m_mLocal);
-        ::ZeroMemory(&m_lit, sizeof(m_lit));
-        m_pMesh = NULL;
-        m_bound._center = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-        m_bound._radius = 0.0f;
-    }
-    ~CLight(void) {}
+	CLight(void)
+	{
+		static DWORD i = 0;
+		m_index = i++;
+		D3DXMatrixIdentity(&m_mLocal);
+		::ZeroMemory(&m_lit, sizeof(m_lit));
+		m_pMesh = NULL;
+		m_bound._center = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		m_bound._radius = 0.0f;
+	}
+	~CLight(void) {}
 public:
-    bool create(IDirect3DDevice9* pDevice, const D3DLIGHT9& lit, float radius = 0.1f)
-    {
-        if (NULL == pDevice)
-            return false;
-        if (FAILED(D3DXCreateSphere(pDevice, radius, 10, 10, &m_pMesh, NULL)))
-            return false;
-		
-        m_bound._center = lit.Position;
-        m_bound._radius = radius;
-		
-        m_lit.Type          = lit.Type;
-        m_lit.Diffuse       = lit.Diffuse;
-        m_lit.Specular      = lit.Specular;
-        m_lit.Ambient       = lit.Ambient;
-        m_lit.Position      = lit.Position;
-        m_lit.Direction     = lit.Direction;
-        m_lit.Range         = lit.Range;
-        m_lit.Falloff       = lit.Falloff;
-        m_lit.Attenuation0  = lit.Attenuation0;
-        m_lit.Attenuation1  = lit.Attenuation1;
-        m_lit.Attenuation2  = lit.Attenuation2;
-        m_lit.Theta         = lit.Theta;
-        m_lit.Phi           = lit.Phi;
-        return true;
-    }
-    void destroy(void)
-    {
-        if (m_pMesh != NULL) {
-            m_pMesh->Release();
-            m_pMesh = NULL;
-        }
-    }
-    bool setLight(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
-    {
-        if (NULL == pDevice)
-            return false;
-		
-        D3DXVECTOR3 pos(m_bound._center);
-        D3DXVec3TransformCoord(&pos, &pos, &m_mLocal);
-        D3DXVec3TransformCoord(&pos, &pos, &mWorld);
-        m_lit.Position = pos;
-		
-        pDevice->SetLight(m_index, &m_lit);
-        pDevice->LightEnable(m_index, TRUE);
-        return true;
-    }
+	bool create(IDirect3DDevice9* pDevice, const D3DLIGHT9& lit, float radius = 0.1f)
+	{
+		if (NULL == pDevice)
+			return false;
+		if (FAILED(D3DXCreateSphere(pDevice, radius, 10, 10, &m_pMesh, NULL)))
+			return false;
 
-    void draw(IDirect3DDevice9* pDevice)
-    {
-        if (NULL == pDevice)
-            return;
-        D3DXMATRIX m;
-        D3DXMatrixTranslation(&m, m_lit.Position.x, m_lit.Position.y, m_lit.Position.z);
-        pDevice->SetTransform(D3DTS_WORLD, &m);
-        pDevice->SetMaterial(&d3d::WHITE_MTRL);
-    }
+		m_bound._center = lit.Position;
+		m_bound._radius = radius;
 
-    D3DXVECTOR3 getPosition(void) const { return D3DXVECTOR3(m_lit.Position); }
+		m_lit.Type = lit.Type;
+		m_lit.Diffuse = lit.Diffuse;
+		m_lit.Specular = lit.Specular;
+		m_lit.Ambient = lit.Ambient;
+		m_lit.Position = lit.Position;
+		m_lit.Direction = lit.Direction;
+		m_lit.Range = lit.Range;
+		m_lit.Falloff = lit.Falloff;
+		m_lit.Attenuation0 = lit.Attenuation0;
+		m_lit.Attenuation1 = lit.Attenuation1;
+		m_lit.Attenuation2 = lit.Attenuation2;
+		m_lit.Theta = lit.Theta;
+		m_lit.Phi = lit.Phi;
+		return true;
+	}
+	void destroy(void)
+	{
+		if (m_pMesh != NULL) {
+			m_pMesh->Release();
+			m_pMesh = NULL;
+		}
+	}
+	bool setLight(IDirect3DDevice9* pDevice, const D3DXMATRIX& mWorld)
+	{
+		if (NULL == pDevice)
+			return false;
+
+		D3DXVECTOR3 pos(m_bound._center);
+		D3DXVec3TransformCoord(&pos, &pos, &m_mLocal);
+		D3DXVec3TransformCoord(&pos, &pos, &mWorld);
+		m_lit.Position = pos;
+
+		pDevice->SetLight(m_index, &m_lit);
+		pDevice->LightEnable(m_index, TRUE);
+		return true;
+	}
+
+	void draw(IDirect3DDevice9* pDevice)
+	{
+		if (NULL == pDevice)
+			return;
+		D3DXMATRIX m;
+		D3DXMatrixTranslation(&m, m_lit.Position.x, m_lit.Position.y, m_lit.Position.z);
+		pDevice->SetTransform(D3DTS_WORLD, &m);
+		pDevice->SetMaterial(&d3d::WHITE_MTRL);
+	}
+
+	D3DXVECTOR3 getPosition(void) const { return D3DXVECTOR3(m_lit.Position); }
 
 private:
-    DWORD               m_index;
-    D3DXMATRIX          m_mLocal;
-    D3DLIGHT9           m_lit;
-    ID3DXMesh*          m_pMesh;
-    d3d::BoundingSphere m_bound;
+	DWORD               m_index;
+	D3DXMATRIX          m_mLocal;
+	D3DLIGHT9           m_lit;
+	ID3DXMesh* m_pMesh;
+	d3d::BoundingSphere m_bound;
 };
 
 
@@ -435,7 +435,7 @@ CWall	g_legowall[wall_cnt];
 CSphere	g_sphere[ball_cnt];
 CLight	g_light;
 
-double g_camera_pos[3] = {0.0, 5.0, -8.0};
+double g_camera_pos[3] = { 0.0, 5.0, -8.0 };
 
 // -----------------------------------------------------------------------------
 // Functions
@@ -468,12 +468,12 @@ bool Setup()
 	g_legowall[2].setPosition(-4.56f, 0.12f, 0.0f);
 
 	// create balls and set the position
-	for (i=0;i<ball_cnt;i++) {
+	for (i = 0; i < ball_cnt; i++) {
 		if (false == g_sphere[i].create(Device, sphereColor[i])) return false;
-		g_sphere[i].setCenter(spherePos[i][0], (float)M_RADIUS , spherePos[i][1]);
-		g_sphere[i].setPower(0,0);
+		g_sphere[i].setCenter(spherePos[i][0], (float)M_RADIUS, spherePos[i][1]);
+		g_sphere[i].setPower(0, 0);
 	}
-	
+
 	// font setting
 	if (FAILED(D3DXCreateFont(
 		Device,                // D3D device
@@ -495,22 +495,22 @@ bool Setup()
 
 
 	// light setting 
-    D3DLIGHT9 lit;
-    ::ZeroMemory(&lit, sizeof(lit));
-    lit.Type         = D3DLIGHT_POINT;
-    lit.Diffuse      = d3d::WHITE; 
-	lit.Specular     = d3d::WHITE * 0.9f;
-    lit.Ambient      = d3d::WHITE * 0.9f;
-    lit.Position     = D3DXVECTOR3(0.0f, 3.0f, 0.0f);
-    lit.Range        = 100.0f;
-    lit.Attenuation0 = 0.0f;
-    lit.Attenuation1 = 0.9f;
-    lit.Attenuation2 = 0.0f;
-    if (false == g_light.create(Device, lit))
-        return false;
-	
+	D3DLIGHT9 lit;
+	::ZeroMemory(&lit, sizeof(lit));
+	lit.Type = D3DLIGHT_POINT;
+	lit.Diffuse = d3d::WHITE;
+	lit.Specular = d3d::WHITE * 0.9f;
+	lit.Ambient = d3d::WHITE * 0.9f;
+	lit.Position = D3DXVECTOR3(0.0f, 3.0f, 0.0f);
+	lit.Range = 100.0f;
+	lit.Attenuation0 = 0.0f;
+	lit.Attenuation1 = 0.9f;
+	lit.Attenuation2 = 0.0f;
+	if (false == g_light.create(Device, lit))
+		return false;
+
 	// Position and aim the camera.
-	D3DXVECTOR3 pos(15.0f,20.0f, 0.0f);
+	D3DXVECTOR3 pos(15.0f, 20.0f, 0.0f);
 	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
 	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 	D3DXMatrixLookAtLH(&g_mView, &pos, &target, &up);
@@ -518,26 +518,26 @@ bool Setup()
 
 	// Set the projection matrix.
 	D3DXMatrixPerspectiveFovLH(&g_mProj, D3DX_PI / 8,
-        (float)Width / (float)Height, 1.0f, 100.0f);
+		(float)Width / (float)Height, 1.0f, 100.0f);
 	Device->SetTransform(D3DTS_PROJECTION, &g_mProj);
-	
-    // Set render states.
-    Device->SetRenderState(D3DRS_LIGHTING, TRUE);
-    Device->SetRenderState(D3DRS_SPECULARENABLE, TRUE);
-    Device->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
-	
+
+	// Set render states.
+	Device->SetRenderState(D3DRS_LIGHTING, TRUE);
+	Device->SetRenderState(D3DRS_SPECULARENABLE, TRUE);
+	Device->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
+
 	g_light.setLight(Device, g_mWorld);
 	return true;
 }
 
 void Cleanup(void)
 {
-    g_legoPlane.destroy();
-	for(int i = 0 ; i < wall_cnt; i++) {
+	g_legoPlane.destroy();
+	for (int i = 0; i < wall_cnt; i++) {
 		g_legowall[i].destroy();
 	}
-    destroyAllLegoBlock();
-    g_light.destroy();
+	destroyAllLegoBlock();
+	g_light.destroy();
 	if (g_font != NULL) {
 		g_font->Release();
 		g_font = NULL;
@@ -562,11 +562,11 @@ void resetGame()
 // the distance of moving balls should be "velocity * timeDelta"
 bool Display(float timeDelta)
 {
-	int i=0;
+	int i = 0;
 	int j = 0;
 
 
-	if( Device )
+	if (Device)
 	{
 		Device->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00afafaf, 1.0f, 0);
 		Device->BeginScene();
@@ -581,23 +581,23 @@ bool Display(float timeDelta)
 		}
 
 		for (int i = 0; i < ball_cnt; i++) {
-			g_sphere[i].hitBy(g_sphere[0], g_sphere)
+			g_sphere[i].hitBy(g_sphere[0], g_sphere);
 		}
-		
+
 		// draw plane, walls, and spheres
 		g_legoPlane.draw(Device, g_mWorld);
-		for (i = 0; i < wall_cnt; i++) 	{
+		for (i = 0; i < wall_cnt; i++) {
 			g_legowall[i].draw(Device, g_mWorld);
 		}
 		for (i = 0; i < ball_cnt; i++) {
 			g_sphere[i].draw(Device, g_mWorld);
 		}
-        g_light.draw(Device);
-		
+		g_light.draw(Device);
+
 		const int margin = 60;
-		rectLives = { margin-20, margin - 20, margin + 200, margin + 40 };
+		rectLives = { margin - 20, margin - 20, margin + 200, margin + 40 };
 		rectScore = { Width - margin - 200, margin - 20, Width - margin, margin + 40 };
-		rectStart = { (Width / 2) - 150, Height - margin - 100, (Width / 2) + 150, Height - margin};
+		rectStart = { (Width / 2) - 150, Height - margin - 100, (Width / 2) + 150, Height - margin };
 
 		// draw "Lives Left" label
 		std::string lives_txt = "Lives Left: " + std::to_string(g_lives);
@@ -609,28 +609,14 @@ bool Display(float timeDelta)
 		const char* score = score_txt.c_str();
 		g_font->DrawText(NULL, score, -1, &rectScore, DT_RIGHT | DT_TOP, D3DCOLOR_XRGB(0, 0, 0));
 
-		// Calculate velocity magnitude
-		double vx = g_sphere[0].getVelocity_X();
-		double vz = g_sphere[0].getVelocity_Z();
-		double velocityMagnitude = std::sqrt(vx * vx + vz * vz);  // Magnitude formula
-
-		// Format the string
-		std::string postxt = "velo: " + std::to_string(vx) + ", " + std::to_string(vz);
-		std::string magtxt = "mag: " + std::to_string(velocityMagnitude);
-		const char* post = postxt.c_str();
-		const char* mag = magtxt.c_str();
-		// Draw text
-		g_font->DrawText(NULL, post, -1, &rectScore, DT_RIGHT | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
-		g_font->DrawText(NULL, mag, -1, &rectLives, DT_RIGHT | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
-
 		// draw "Press Space to START" label
 		if (!game_started) {
 			g_font->DrawText(NULL, "Press Space to START", -1, &rectStart, DT_CENTER | DT_BOTTOM, D3DCOLOR_XRGB(0, 0, 0));
 		}
-		
+
 		Device->EndScene();
 		Device->Present(0, 0, 0, 0);
-		Device->SetTexture( 0, NULL );
+		Device->SetTexture(0, NULL);
 	}
 	return true;
 }
@@ -683,7 +669,7 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	return ::DefWindowProc(hwnd, msg, wParam, lParam);
 }
-	
+
 int WINAPI WinMain(HINSTANCE hinstance,
 	HINSTANCE prevInstance,
 	PSTR cmdLine,
