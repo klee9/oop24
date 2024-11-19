@@ -572,20 +572,18 @@ bool Display(float timeDelta)
 		Device->BeginScene();
 
 		// Update the position of each ball
-		for (int i = 0; i < ball_cnt; ++i) {
+		for (int i = 0; i < ball_cnt; i++) {
 			g_sphere[i].ballUpdate(timeDelta, g_sphere);
-
 			// Check collisions with walls
-			for (int j = 0; j < wall_cnt; ++j) {
+			for (int j = 0; j < wall_cnt; j++) {
 				g_legowall[j].hitBy(g_sphere[i]);
-			}
-
-			for (int j = 0; j < ball_cnt; ++j) {
-				if (i == j) continue;
-				g_sphere[i].hitBy(g_sphere[j], g_sphere);
 			}
 		}
 
+		for (int i = 0; i < ball_cnt; i++) {
+			g_sphere[i].hitBy(g_sphere[0], g_sphere)
+		}
+		
 		// draw plane, walls, and spheres
 		g_legoPlane.draw(Device, g_mWorld);
 		for (i = 0; i < wall_cnt; i++) 	{
@@ -618,7 +616,7 @@ bool Display(float timeDelta)
 
 		// Format the string
 		std::string postxt = "velo: " + std::to_string(vx) + ", " + std::to_string(vz);
-		std::string magtxt = "game: " + std::to_string(velocityMagnitude);
+		std::string magtxt = "mag: " + std::to_string(velocityMagnitude);
 		const char* post = postxt.c_str();
 		const char* mag = magtxt.c_str();
 		// Draw text
