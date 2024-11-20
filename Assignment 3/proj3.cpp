@@ -153,13 +153,13 @@ public:
 				D3DXVECTOR3 v_red(other.getVelocity_X(), 0, other.getVelocity_Z());
 
 				float dot_product = D3DXVec3Dot(&v_red, &vec);
-				D3DXVECTOR3 reflectedVelocity = v_red - 2 * dot_product * vec;
+				D3DXVECTOR3 new_v = v_red - 2 * dot_product * vec;
 
 				if (this != &g_sphere[0] && this != &g_sphere[1]) {
 					this->setCenter(100.0f, 0.0f, 0.0f);
 					g_score += 100;
 				}
-				other.setPower(reflectedVelocity.x, reflectedVelocity.z);
+				other.setPower(new_v.x, new_v.z);
 			}
 		}
 	}
@@ -177,19 +177,17 @@ public:
 
 			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5) {
 				g_lives--;
-				if (!g_lives || g_score == 5400) {
-					std::string endmsg = "Game Over!! (Final Score: " + std::to_string(g_score) + ")";
-					const char* n_endmsg = endmsg.c_str();
+				if (!g_lives || g_score == (ball_cnt - 2) * 100) {
+					std::string end_msg = "Game Over!! (Final Score: " + std::to_string(g_score) + ")";
+					const char* n_endmsg = end_msg.c_str();
 					int result = MessageBox(
 						NULL,
 						n_endmsg,
 						"Game Manager",
 						MB_OK | MB_ICONEXCLAMATION
 					);
-
 					if (result == IDOK) exit(0);
 				}
-
 				tX = g_sphere[1].getCenter().x - 0.6;
 				tZ = g_sphere[1].getCenter().z;
 				g_sphere[0].setPower(0.0, 0.0);
@@ -197,7 +195,6 @@ public:
 			}
 			this->setCenter(tX, cord.y, tZ);
 		}
-
 	}
 
 	double getVelocity_X() { return this->m_velocity_x; }
@@ -330,8 +327,6 @@ public:
 	}
 
 	float getHeight(void) const { return M_HEIGHT; }
-
-
 
 private:
 	void setLocalTransform(const D3DXMATRIX& mLocal) { m_mLocal = mLocal; }
