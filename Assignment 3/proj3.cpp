@@ -166,6 +166,7 @@ public:
 
 	void ballUpdate(float timeDiff, CSphere* g_sphere)
 	{
+		if (this != &g_sphere[0]) return;
 		const float TIME_SCALE = 3.3;
 		D3DXVECTOR3 cord = this->getCenter();
 		double vx = abs(this->getVelocity_X());
@@ -625,34 +626,41 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (!game_started) {
 				g_sphere[0].setPower(-2.0f, 0.0f);
 				game_started = true;
-			}
+			} 
 			break;
-		case VK_LEFT: // adjust 0.2
-			z = g_sphere[1].getCenter().z - 0.2;
-			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, z);
+		case VK_LEFT:
+			g_sphere[1].setCenter(
+				g_sphere[1].getCenter().x,
+				g_sphere[1].getCenter().y,
+				g_sphere[1].getCenter().z - 0.1);
+			if (!game_started) g_sphere[0].setCenter(g_sphere[1].getCenter().x - 0.5, g_sphere[1].getCenter().y, g_sphere[1].getCenter().z);
 			break;
 		case VK_RIGHT:
-			z = g_sphere[1].getCenter().z + 0.2;
-			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, z);
+			g_sphere[1].setCenter(
+				g_sphere[1].getCenter().x,
+				g_sphere[1].getCenter().y,
+				g_sphere[1].getCenter().z + 0.1);
+			if (!game_started) g_sphere[0].setCenter(g_sphere[1].getCenter().x - 0.5, g_sphere[1].getCenter().y, g_sphere[1].getCenter().z);
 			break;
 		}
 	}
 
 	case WM_MOUSEMOVE:
 	{
-		int new_x = LOWORD(lParam);
+		int new_z = LOWORD(lParam);
+		float normalized_z = (float(new_z) / Height) * 6.0f - 3.0f;
 
-		float normalized_z = (float(new_x) / Height) * 6.0f - 3.0f;
 		float wall_min_z = -3.0f + g_sphere[0].getRadius();
 		float wall_max_z = 3.0f - g_sphere[0].getRadius();
 
 		normalized_z = std::max(wall_min_z, std::min(normalized_z, wall_max_z));
 
-		if (!game_started) {
-			g_sphere[0].setCenter(g_sphere[0].getCenter().x, g_sphere[0].getCenter().y, normalized_z);
+		if (normalized_z > wall_min_z && normalized_z < wall_max_z) {
+			if (!game_started) {
+				g_sphere[0].setCenter(g_sphere[0].getCenter().x, g_sphere[0].getCenter().y, normalized_z);
+			}
+			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, normalized_z);
 		}
-		g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, normalized_z);
-		break;
 	}
 	}
 	return ::DefWindowProc(hwnd, msg, wParam, lParam);
