@@ -140,7 +140,7 @@ public:
 		D3DXVECTOR3 this_center = getCenter();
 		D3DXVECTOR3 red_center = red.getCenter();
 		float dist = D3DXVec3Length(&(this_center - red_center));
-		return (dist <= (getRadius() + red.getRadius()));
+		return (dist <= (getRadius() + red.getRadius() + 0.01));
 	}
 
 	void hitBy(CSphere& other, CSphere* g_sphere)
@@ -178,7 +178,7 @@ public:
 
 			if (g_sphere->getCenter().x > spherePos[0][0] + 0.5) {
 				g_lives--;
-				if (!g_lives || g_score == (ball_cnt - 2) * 100) {
+				if (!g_lives || g_score >= 5400) {
 					std::string end_msg = "Game Over!! (Final Score: " + std::to_string(g_score) + ")";
 					const char* n_endmsg = end_msg.c_str();
 					int result = MessageBox(
@@ -299,12 +299,12 @@ public:
 
 		if (this->m_x == 0) {
 			if (this->m_z < 0) // left wall
-				return (ballCenter.z - ballRadius <= m_z + m_depth / 2);
+				return (ballCenter.z - ballRadius <= m_z + m_depth / 2 + 0.1);
 			if (this->m_z > 0) // right wall
-				return (ballCenter.z + ballRadius >= m_z - m_depth / 2);
+				return (ballCenter.z + ballRadius >= m_z - m_depth / 2 - 0.1);
 		}
 		else { // top wall
-			return (ballCenter.x - ballRadius <= m_x + m_width / 2);
+			return (ballCenter.x - ballRadius <= m_x + m_width / 2 + 0.1);
 		}
 	}
 
