@@ -551,10 +551,10 @@ bool Display(float timeDelta)
 		Device->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00afafaf, 1.0f, 0);
 		Device->BeginScene();
 
-		// Update the position of each ball
+		// update the position of each ball
 		for (int i = 0; i < ball_cnt; i++) {
 			g_sphere[i].ballUpdate(timeDelta, g_sphere);
-			// Check collisions with walls
+			// check collisions with walls
 			for (int j = 0; j < wall_cnt; j++) {
 				g_legowall[j].hitBy(g_sphere[i]);
 			}
