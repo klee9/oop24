@@ -3,7 +3,10 @@
 
 cv::VideoCapture camera(0);
 
-if (!camera.isOpened()) {
-    std::cerr << "Error: Could not open the webcam!" << std::endl;
-    return -1;
+// test code
+int main() {
+    if (!camera.isOpened()) {
+        std::cerr << "Error: Could not open the webcam!" << std::endl;
+        return -1;
+    }
 }
