@@ -539,27 +539,12 @@ void Cleanup(void)
 	}
 }
 
-void resetGame()
-{
-	g_lives = 5;
-	g_score = 0;
-	game_started = false;
-
-	for (int i = 0; i < ball_cnt; i++) {
-		g_sphere[i].setCenter(spherePos[i][0], (float)M_RADIUS, spherePos[i][1]);
-		g_sphere[i].setPower(0.0f, 0.0f); // Reset velocities
-	}
-
-	g_sphere[0].setPower(-3.0f, 0.0f);
-}
-
 // timeDelta represents the time between the current image frame and the last image frame.
 // the distance of moving balls should be "velocity * timeDelta"
 bool Display(float timeDelta)
 {
 	int i = 0;
 	int j = 0;
-
 
 	if (Device)
 	{
@@ -641,6 +626,14 @@ LRESULT CALLBACK d3d::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				g_sphere[0].setPower(-2.0f, 0.0f);
 				game_started = true;
 			}
+			break;
+		case VK_LEFT: // adjust 0.2
+			z = g_sphere[1].getCenter().z - 0.2;
+			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, z);
+			break;
+		case VK_RIGHT:
+			z = g_sphere[1].getCenter().z + 0.2;
+			g_sphere[1].setCenter(g_sphere[1].getCenter().x, g_sphere[1].getCenter().y, z);
 			break;
 		}
 	}
