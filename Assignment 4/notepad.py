@@ -90,5 +90,6 @@ class HandDetector:
 class Brush:
 
 if __name__ == "__main__": 
+    setup_venv()
     webcam = Webcam()
     webcam.show_feed()
