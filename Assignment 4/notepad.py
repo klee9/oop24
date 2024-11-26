@@ -79,9 +79,12 @@ class Webcam:
 
 # hand gesture recognizer
 class GestureDetector:
-    def __init__(self, )
-    def toggle_recog(self):
-        
+    def __init__(self, recog=True):
+        self.recog = recog
+    def toggle(self):
+        self.recog = !(self.recog)
+    def detect(self):
+        # add a function for detecting gestures
 
 # painter
 class Brush:
