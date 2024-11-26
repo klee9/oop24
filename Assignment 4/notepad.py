@@ -78,7 +78,7 @@ class Webcam:
             cv2.destroyAllWindows()
 
 # hand gesture recognizer
-class GestureDetector:
+class HandDetector:
     def __init__(self, recog=True):
         self.recog = recog
     def toggle(self):
