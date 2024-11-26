@@ -35,25 +35,46 @@ import cv2
 import mediapipe as mp
 
 # webcam class
+class Webcam:
+    def __init__(self, camera_idx=0, width=640, height=480):
+        """
+        Initializes webcam
+        :param camera_idx: index of the camera (0 for the default camera)
+        :param width: width of the webcam feed
+        :param heigth: height of the webcam feed
+        """
+        # launch webcam
+        cv2.VideoCapture(0)
+        if not self.cam.isOpened():
+            raise Exception("Could not open the webcam.")
 
-# open webcam
-cam = cv2.VideoCapture(0)
+        # set resolution
+        self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-if not cam.isOpened():
-    print("Could not open the webcam.")
-    exit()
+    def get_frame(self):
+        """
+        Captures a frame
+        :return: captured frame
+        """
+        ret, frame = self.cam.read()
+        if not ret:
+            raise Exception("Failed to capture frame.")
+        return frame
+        
+    def show_feed(self, window_name="Webcam"):
+        """
+        Displays webcam feed
+        :param window_name: name of the webcam window
+        """
+        while True:
+            frame = self.get_frame()
+            cv2.imshow(window_name, frame)
 
-while True:
-    ret, frame = cam.read()
+            if cv2.waitKey(1) & 0xff == ord('q'):
+                break
 
-    if not ret: 
-        print("Failed to grab frame")
-        break
+            cam.release()
+            cv2.destroyAllWindows()
 
-    cv2.imshow("Webcam Feed", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cam.release()
-cv2.destroyAllWindows()
