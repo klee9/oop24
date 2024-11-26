@@ -77,4 +77,15 @@ class Webcam:
             cam.release()
             cv2.destroyAllWindows()
 
+# hand gesture recognizer
+class GestureDetector:
+    def __init__(self, )
+    def toggle_recog(self):
+        
 
+# painter
+class Brush:
+
+if __name__ == "__main__": 
+    webcam = Webcam()
+    webcam.show_feed()
