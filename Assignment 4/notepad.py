@@ -56,7 +56,7 @@ class Webcam:
         self.cam.release()
         cv2.destroyAllWindows()
 
-# hand gesture recognizer
+# hand detector class
 class HandDetector(Webcam):
     def __init__(self, max_hands=1, detection_conf=0.6, tracking_conf=0.6):
         self.hands = mp.solutions.hands.Hands(
@@ -73,6 +73,23 @@ class HandDetector(Webcam):
         return results
     
     def find_fingertips(self, frame):
+        # do things
+
+# painter class
+class Liner(HandDetector):
+    def __init__(self):
+        self.color = cv2.Color(0, 255, 0)
+        self.type = "pen"
+        
+    def change_color(self, color):
+        self.color = color
+        
+    def change_type(self, type="pen"):
+        self.type = type
+        
+# pdf detection -> maybe WindowHandler?
+# gesture detecting mechanism
+# brush changing func -> color, type (maybe merge this to HandDetector)
 
 if __name__ == "__main__": 
     setup_venv()
