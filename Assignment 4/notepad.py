@@ -60,15 +60,14 @@ class Webcam:
 
 # hand gesture recognizer
 class HandDetector(Webcam):
-    def __init__(self, max_hands=1, detection_conf=0.7, tracking_conf=0.7):
+    def __init__(self, max_hands=1, detection_conf=0.6, tracking_conf=0.6):
         self.hands = mp.solutions.hands.Hands(
-            static_image_mode=False
-            max_num_hands=max_hands
+            static_image_mode = False,
+            max_num_hands = max_hands,
+            min_detection_confidence = detection_conf,
+            min_tracking_confidence = tracking_conf
         )
-    def toggle(self):
-        self.recog = !(self.recog)
-    def detect(self):
-        # add a function for detecting gestures
+        self.brush = mp.solutions.drawing_utils
 
 if __name__ == "__main__": 
     setup_venv()
