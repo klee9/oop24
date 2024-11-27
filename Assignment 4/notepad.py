@@ -50,7 +50,7 @@ class Webcam:
             return None
 
         # return mirrored view
-        return cv2.flip(frame, 1
+        return cv2.flip(frame, 1)
         
     def release(self):
         self.cam.release()
