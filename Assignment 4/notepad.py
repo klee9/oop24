@@ -28,8 +28,6 @@ def setup_venv():
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-setup_venv()
-
 # upon completion, import OpenCV and MediaPipe
 import cv2
 import mediapipe as mp
