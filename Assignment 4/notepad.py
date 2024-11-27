@@ -37,12 +37,6 @@ import mediapipe as mp
 # webcam class
 class Webcam:
     def __init__(self, camera_idx=0, width=640, height=480):
-        """
-        Initializes webcam
-        :param camera_idx: index of the camera (0 for the default camera)
-        :param width: width of the webcam feed
-        :param heigth: height of the webcam feed
-        """
         # launch webcam
         cv2.VideoCapture(0)
         if not self.cam.isOpened():
@@ -51,37 +45,26 @@ class Webcam:
         # set resolution
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-
+    
     def get_frame(self):
-        """
-        Captures a frame
-        :return: captured frame
-        """
         ret, frame = self.cam.read()
         if not ret:
-            raise Exception("Failed to capture frame.")
-        return frame
+            return None
+
+        # return mirrored view
+        return cv2.flip(frame, 1
         
-    def show_feed(self, window_name="Webcam"):
-        """
-        Displays webcam feed
-        :param window_name: name of the webcam window
-        """
-        while True:
-            frame = self.get_frame()
-            cv2.imshow(window_name, frame)
-
-            if cv2.waitKey(1) & 0xff == ord('q'):
-                break
-
-            cam.release()
-            cv2.destroyAllWindows()
+    def release(self):
+        self.cam.release()
+        cv2.destroyAllWindows()
 
 # hand gesture recognizer
 class HandDetector(Webcam):
-    def __init__(self, recog=True):
-        self.mp_hands = mp.solutions.hand
-        self.recog = recog
+    def __init__(self, max_hands=1, detection_conf=0.7, tracking_conf=0.7):
+        self.hands = mp.solutions.hands.Hands(
+            static_image_mode=False
+            max_num_hands=max_hands
+        )
     def toggle(self):
         self.recog = !(self.recog)
     def detect(self):
