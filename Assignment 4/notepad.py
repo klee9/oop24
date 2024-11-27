@@ -78,16 +78,14 @@ class Webcam:
             cv2.destroyAllWindows()
 
 # hand gesture recognizer
-class HandDetector:
+class HandDetector(Webcam):
     def __init__(self, recog=True):
+        self.mp_hands = mp.solutions.hand
         self.recog = recog
     def toggle(self):
         self.recog = !(self.recog)
     def detect(self):
         # add a function for detecting gestures
-
-# painter
-class Brush:
 
 if __name__ == "__main__": 
     setup_venv()
