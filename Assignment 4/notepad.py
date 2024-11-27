@@ -62,12 +62,19 @@ class Webcam:
 class HandDetector(Webcam):
     def __init__(self, max_hands=1, detection_conf=0.6, tracking_conf=0.6):
         self.hands = mp.solutions.hands.Hands(
-            static_image_mode = False,
-            max_num_hands = max_hands,
-            min_detection_confidence = detection_conf,
-            min_tracking_confidence = tracking_conf
+            static_image_mode=False,
+            max_num_hands=max_hands,
+            min_detection_confidence=detection_conf,
+            min_tracking_confidence=tracking_conf
         )
         self.brush = mp.solutions.drawing_utils
+        
+    def find_hands(self, frame):
+        rgb_f = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = self.hands.process(rgb_f)
+        return results
+    
+    def find_fingertips(self, frame):
 
 if __name__ == "__main__": 
     setup_venv()
