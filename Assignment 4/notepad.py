@@ -1,63 +1,66 @@
 import os
 import sys
 import subprocess
+import math
 
 def setup_venv():
     try:
         # create the virtual environment
-        env_path = "env"
+        env_path = "v_env"
         if not os.path.exists(env_path):
             print("Creating virtual environment...")
             subprocess.check_call([sys.executable, "-m", "venv", env_path])
         else:
             print("Virtual environment already exists.")
 
-        # activate the virtual environment
-        activate_script = os.path.join(venv_path, "bin", "activate")
-        subprocess.check_call([sys.executable, "source", activate_script])
+        # use the Python executable from the virtual environment
+        env_python = os.path.join(env_path, "bin", "python")
 
         # install required packages
         print("Installing dependencies...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "opencv-python", "opencv-python-headless", "mediapipe"])
+        subprocess.check_call([env_python, "-m", "pip", "install", "--upgrade", "pip"])
+        subprocess.check_call([env_python, "-m", "pip", "install", "opencv-python", "opencv-python-headless"])
+        subprocess.check_call([env_python, "-m", "pip", "install", "pyautogui"])
+        subprocess.check_call([env_python, "-m", "pip", "install", "mediapipe"])
 
-        print("Setup complete. OpenCV and MediaPipe installed successfully!")
+        print("Setup complete.")
 
     except subprocess.CalledProcessError as e:
         print(f"Error during setup: {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-# upon completion, import OpenCV and MediaPipe
+# set up a virtual environment
+# setup_venv()
+
 import cv2
+import numpy as np
 import mediapipe as mp
+import fitz
+import PIL
+from io import BytesIO
 
 # webcam class
 class Webcam:
-    def __init__(self, camera_idx=0, width=640, height=480):
+    def __init__(self, camera_idx=0, width=840, height=480):
         # launch webcam
-        cv2.VideoCapture(0)
-        if not self.cam.isOpened():
-            raise Exception("Could not open the webcam.")
-
-        # set resolution
+        self.cam = cv2.VideoCapture(camera_idx)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    
+
     def get_frame(self):
         ret, frame = self.cam.read()
         if not ret:
             return None
 
-        # return mirrored view
         return cv2.flip(frame, 1)
-        
+
     def release(self):
         self.cam.release()
         cv2.destroyAllWindows()
 
 # hand detector class
-class HandDetector(Webcam):
+class HandDetector:
     def __init__(self, max_hands=1, detection_conf=0.6, tracking_conf=0.6):
         self.hands = mp.solutions.hands.Hands(
             static_image_mode=False,
@@ -66,32 +69,257 @@ class HandDetector(Webcam):
             min_tracking_confidence=tracking_conf
         )
         self.brush = mp.solutions.drawing_utils
-        
+
     def find_hands(self, frame):
         rgb_f = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.hands.process(rgb_f)
         return results
-    
-    def find_fingertips(self, frame):
-        # do things
 
-# painter class
-class Liner(HandDetector):
-    def __init__(self):
-        self.color = cv2.Color(0, 255, 0)
-        self.type = "pen"
-        
-    def change_color(self, color):
-        self.color = color
-        
-    def change_type(self, type="pen"):
-        self.type = type
-        
-# pdf detection -> maybe WindowHandler?
-# gesture detecting mechanism
-# brush changing func -> color, type (maybe merge this to HandDetector)
+    def draw_landmarks(self, frame, hand_landmarks):
+        if hand_landmarks:
+            for handLms in hand_landmarks:
+                # draw the landmarks on the frame
+                self.brush.draw_landmarks(
+                    frame,
+                    handLms,
+                    mp.solutions.hands.HAND_CONNECTIONS,
+                    self.brush.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
+                    self.brush.DrawingSpec(color=(255, 0, 0), thickness=2)
+                )
 
-if __name__ == "__main__": 
-    setup_venv()
-    webcam = Webcam()
-    webcam.show_feed()
+# gesture handler class
+class GestureHandler:
+    def __init__(self, pinch_threshold=0.0022, swipe_threshold=0.05):
+        self.pinch_threshold = pinch_threshold
+        self.swipe_threshold = swipe_threshold
+        self.previous_index_x = None
+
+    def get_dist(self, thumb, index):
+        return (thumb.x - index.x)**2 + (thumb.y - index.y)**2
+
+    def is_pinching(self, thumb, index):
+        dist = self.get_dist(thumb, index)
+        return dist < self.pinch_threshold
+
+    def swipe_left(self, thumb, index):
+        if not self.is_pinching(thumb, index) and self.previous_index_x is not None:
+            if self.previous_index_x - index.x > self.swipe_threshold:
+                self.previous_index_x = index.x
+                return True
+        self.previous_index_x = index.x 
+        return False
+
+    def swipe_right(self, thumb, index):
+        if not self.is_pinching(thumb, index) and self.previous_index_x is not None:
+            if index.x - self.previous_index_x > self.swipe_threshold:
+                self.previous_index_x = index.x 
+                return True
+        self.previous_index_x = index.x
+        return False
+
+# toolset class
+class Toolset(GestureHandler):
+    def erase_nearby(self, layer, cursor, threshold=10):
+        global lines
+        if cursor is None:
+            print("Cursor not detected; skipping erase.")
+            return layer  # No cursor, no erasing
+
+        # filter lines that are NOT near the cursor
+        lines_to_keep = []
+        for line in lines:
+            start, end = line
+            if not self.is_near_line(cursor, start, end, threshold):
+                lines_to_keep.append(line)
+
+        lines = lines_to_keep
+
+        # Clear and redraw remaining lines on the note layer
+        layer = np.zeros_like(layer)
+        for line in lines:
+            cv2.line(layer, line[0], line[1], (0, 0, 255, 128), thickness=3)
+
+        return layer
+
+    def is_near_line(self, cursor, start, end, threshold=10):
+        x0, y0 = cursor
+        x1, y1 = start
+        x2, y2 = end
+
+        # Calculate perpendicular distance from cursor to line segment
+        num = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
+        den = ((y2 - y1)**2 + (x2 - x1)**2)**0.5
+        dist = num / den if den != 0 else float('inf')
+
+        return dist <= threshold
+
+# pdf handler class
+class PDFHandler:
+    def __init__(self, page_num=0):
+        self.page_num = page_num
+
+    def get_resolutions(self, pdf_path, dpi=100):
+        doc = fitz.open(pdf_path)
+        rect = doc[0].rect
+        width = int(rect.width * dpi / 72)
+        height = int(rect.height * dpi / 72)
+        doc.close()
+
+        return width, height
+
+    def pdf2img(self, pdf_path, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            print(f"Directory {output_dir} created.")
+
+        doc = fitz.open(pdf_path)
+        images = []
+        
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            pix = page.get_pixmap()
+            output_path = f"{output_dir}/page_{page_num + 1}.png"
+            pix.save(output_path)
+            images.append(output_path)
+
+        doc.close()
+        return images
+
+    def img2pdf(self, img_paths, output_pdf_path):
+        c = canvas.Canvas(output_pdf_path)
+        for image_path in img_paths:
+            # open the image
+            img = Image.open(image_path)
+            width, height = img.size
+
+            # set the page size to match the image size
+            c.setPageSize((width, height))
+            c.drawImage(image_path, 0, 0, width, height)
+            c.showPage()
+
+        c.save()
+
+    def save_page(self, page_path, pdf_layer, note_layer):
+        b, g, r, a = cv2.split(note_layer)
+        alpha = a / 255.0
+        for c in range(3):
+            pdf_layer[:, :, c] = ((1 - alpha) * pdf_layer[:, :, c] + alpha * note_layer[:, :, c])
+
+        # save the updated image
+        cv2.imwrite(page_path, pdf_layer)
+
+    def next_page(self, pdf_imgs):
+        self.page_num = (self.page_num + 1) % len(pdf_imgs)
+        img = cv2.imread(pdf_imgs[self.page_num])
+        img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
+        return img.copy()
+
+    def prev_page(self, pdf_imgs):
+        self.page_num = (self.page_num - 1) % len(pdf_imgs)
+        img = cv2.imread(pdf_imgs[self.page_num])
+        img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
+        return img.copy()
+
+# initialize classes
+webcam = Webcam()
+detector = HandDetector()
+gesture = GestureHandler()
+pdf = PDFHandler()
+tool = Toolset()
+
+# initialize files
+pdf_path = "/Users/klee9/Desktop/oop.pdf"
+output_dir = "/Users/klee9/Desktop/pdf2img"
+
+pdf_imgs = pdf.pdf2img(pdf_path, output_dir)
+page_num = 0
+
+# initialize graphics-related variables
+webcam_width, webcam_height = pdf.get_resolutions(pdf_path)
+
+img = cv2.imread(pdf_imgs[page_num])
+img = cv2.resize(img, (webcam_width, webcam_height))
+
+lines = []
+prev_index = None
+
+pdf_layer = img.copy()
+note_layer = np.zeros((pdf_layer.shape[0], pdf_layer.shape[1], 4), dtype=np.uint8)
+
+while True:
+    base_layer = webcam.get_frame()
+    if base_layer is None:
+        break
+
+    # get base layer dimensions
+    base_height, base_width, _ = base_layer.shape
+
+    # resize pdf and note layers to match the base layer
+    pdf_layer = cv2.resize(pdf_layer, (base_width, base_height))
+    note_layer = cv2.resize(note_layer, (base_width, base_height))
+
+    # detect hands
+    results = detector.find_hands(base_layer)
+    cursor_coords = None
+
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            # get coordinates
+            index = hand_landmarks.landmark[mp.solutions.hands.HandLandmark.INDEX_FINGER_TIP]
+            thumb = hand_landmarks.landmark[mp.solutions.hands.HandLandmark.THUMB_TIP]
+
+            # convert normalized coordinates to pixel coordinates
+            index_coords = (int(index.x * base_width), int(index.y * base_height))
+            thumb_coords = (int(thumb.x * base_width), int(thumb.y * base_height))
+
+            # draw a line while pinching
+            if prev_index and gesture.is_pinching(thumb, index):
+                cv2.line(note_layer, prev_index, index_coords, (0, 0, 255, 128), thickness=3)
+                lines.append((prev_index, index_coords))
+
+            cursor_coords = index_coords
+            prev_index = index_coords
+
+    # blend the note layer with the pdf layer
+    b, g, r, a = cv2.split(note_layer)
+    alpha = a / 255.0
+    for c in range(3):
+        pdf_layer[:, :, c] = ((1 - alpha) * pdf_layer[:, :, c] + alpha * note_layer[:, :, c])
+
+    display_layer = pdf_layer.copy()
+
+    # draw the cursor on the display layer
+    if cursor_coords:
+        cv2.circle(display_layer, cursor_coords, 5, (0, 255, 0), -1)
+
+    # display the composite frame with the cursor
+    cv2.imshow("Note", display_layer)
+
+    # handle key events
+    key = cv2.waitKey(1) & 0xFF
+
+    # c: clear the note layer
+    if key == ord('c'): 
+        note_layer = np.zeros((note_layer.shape[0], note_layer.shape[1], 4), dtype=np.uint8)
+        lines = []
+
+    # e: erase line closest to the cursor
+    elif key == ord('e'):
+        note_layer = tool.erase_nearby(note_layer, cursor_coords, threshold=10)
+
+    # n: go to the next page
+    elif key == ord('n'):
+        pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
+        pdf_layer = pdf.next_page(pdf_imgs)
+
+    # p: go to the previous page
+    elif key == ord('p'):
+        pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
+        pdf_layer = pdf.prev_page(pdf_imgs)
+
+    # esc: exit
+    elif key == 27:
+        break
+
+webcam.release()
+cv2.destroyAllWindows()
