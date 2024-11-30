@@ -338,11 +338,13 @@ while True:
 
     # c: clear the note layer
     if key == ord('c'): 
-        note_layer[:] = tool.clear_screen(note_layer)
+        note_layer = tool.clear_screen(note_layer)
+        pdf_layer = pdf_layer.copy()
 
     # e: erase line closest to the cursor
     elif key == ord('e'):
         note_layer = tool.erase_nearby(note_layer, cursor_coords, threshold=10)
+        pdf_layer = pdf_layer.copy()
 
     # n: go to the next page
     elif key == ord('n'):
