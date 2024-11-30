@@ -124,7 +124,6 @@ class Toolset(GestureHandler):
         global lines
         layer[:] = 0
         lines = []
-        layer = cv2.resize(layer, (base_width, base_height))
         return layer
 
     def erase_nearby(self, layer, cursor, threshold=10):
@@ -293,6 +292,7 @@ kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1
 
 # initial state 
 kalman.statePre = np.zeros((4, 1), dtype=np.float32)
+kalman.statePost = kalman.statePre.copy()
 
 while True:
     base_layer = webcam.get_frame()
