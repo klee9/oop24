@@ -1,4 +1,4 @@
-import os
+pimport os
 import sys
 import subprocess
 import math
@@ -254,6 +254,8 @@ color = (0, 0, 0, 128)
 
 pdf_layer = img.copy()
 note_layer = np.zeros((pdf_layer.shape[0], pdf_layer.shape[1], 4), dtype=np.uint8)
+pdf_layer = cv2.resize(pdf_layer, (webcam_width, webcam_height))
+note_layer = cv2.resize(note_layer, (webcam_width, webcam_height))
 
 # initialize color palette
 colors = [
@@ -298,14 +300,7 @@ while True:
     base_layer = webcam.get_frame()
     if base_layer is None:
         break
-
-    # get base layer dimensions
-    base_height, base_width, _ = base_layer.shape
-
-    # resize pdf and note layers to match the base layer
-    pdf_layer = cv2.resize(pdf_layer, (base_width, base_height))
-    note_layer = cv2.resize(note_layer, (base_width, base_height))
-
+    
     # detect hands
     results = detector.find_hands(base_layer)
     cursor_coords = None
@@ -322,6 +317,7 @@ while True:
 
             kalman.correct(index_coords)
             prediction = kalman.predict()
+            
             index_coords = (int(prediction[0]), int(prediction[1]))
             cursor_coords = index_coords
             
