@@ -395,3 +395,6 @@ cv2.destroyAllWindows()
 # todo
 # add eraser
 # add swiping motions for changing colors
+# check width, height vars
+# improve effieciency
+
