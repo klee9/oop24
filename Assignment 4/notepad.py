@@ -384,9 +384,8 @@ while True:
     # change colors
     if ord('1') <= key <= ord('9'):
         current_color_index = key - ord('1')
-        if current_color_index < len(colors):
-            color = colors[current_color_index]
-            
+        color = colors[current_color_index % len(colors)]
+    
     # esc: exit
     elif key == 27:
         # save the last page, then convert the whole thing into pdf
