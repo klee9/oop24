@@ -256,6 +256,22 @@ color = (0, 0, 0, 128)
 pdf_layer = img.copy()
 note_layer = np.zeros((pdf_layer.shape[0], pdf_layer.shape[1], 4), dtype=np.uint8)
 
+# initialize color palette
+colors = [
+    (0, 0, 255, 128),     # red
+    (0, 165, 255, 128),   # orange
+    (0, 255, 255, 128),   # yellow
+    (0, 255, 0, 128),     # green
+    (255, 0, 0, 128),     # blue
+    (130, 0, 75, 128),    # indigo
+    (238, 130, 238, 128), # pink
+    (255, 255, 255, 128), # white
+    (0, 0, 0, 128),       # black
+]
+
+current_color_index = 0
+color = colors[current_color_index]
+
 # initalize Kalman filter
 kalman = cv2.KalmanFilter(4, 2)
 
@@ -271,10 +287,8 @@ kalman.measurementMatrix = np.array([
     [0, 1, 0, 0]   # measure y
 ], dtype=np.float32)
 
-# process noise covariance matrix
+# covariance matrices
 kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
-
-# Measurement noise covariance matrix
 kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1
 
 # initial state 
@@ -295,7 +309,7 @@ while True:
     # detect hands
     results = detector.find_hands(base_layer)
     cursor_coords = None
-
+    
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             # get coordinates
@@ -310,6 +324,15 @@ while True:
             prediction = kalman.predict()
             index_coords = (int(prediction[0]), int(prediction[1]))
             cursor_coords = index_coords
+            
+            # check for swiping gestures
+            if gesture.swipe_left(thumb, index):
+                current_color_index = (current_color_index - 1) % len(colors)
+                color = colors[current_color_index]
+
+            elif gesture.swipe_right(thumb, index):
+                current_color_index = (current_color_index + 1) % len(colors)
+                color = colors[current_color_index]
 
             # draw a line while pinching
             if prev_index and gesture.is_pinching(thumb, index):
@@ -359,33 +382,11 @@ while True:
         page_num = (page_num - 1) % len(pdf_imgs)
 
     # change colors
-    elif key == ord('1'): # red
-        color = (0, 0, 255, 128)
-
-    elif key == ord('2'): # orange
-        color = (0, 165, 255, 128)
-
-    elif key == ord('3'): # yellow
-        color = (0, 255, 255, 128)
-
-    elif key == ord('4'): # green
-        color = (0, 255, 0, 128)
-
-    elif key == ord('5'): # blue
-        color = (255, 0, 0, 128)
-
-    elif key == ord('6'): # indigo
-        color = (130, 0, 75, 128)
-
-    elif key == ord('7'): # pink
-        color = (238, 130, 238, 128)
-
-    elif key == ord('8'): # white
-        color = (255, 255, 255, 128)
-
-    elif key == ord('9'): # black
-        color = (0, 0, 0, 128)
-
+    if ord('1') <= key <= ord('9'):
+        current_color_index = key - ord('1')
+        if current_color_index < len(colors):
+            color = colors[current_color_index]
+            
     # esc: exit
     elif key == 27:
         # save the last page, then convert the whole thing into pdf
