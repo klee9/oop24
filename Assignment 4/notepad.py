@@ -37,8 +37,9 @@ import cv2
 import numpy as np
 import mediapipe as mp
 import fitz
-import PIL
+from PIL import Image
 from io import BytesIO
+from reportlab.pdfgen import canvas as canv
 
 # webcam class
 class Webcam:
@@ -119,13 +120,19 @@ class GestureHandler:
 
 # toolset class
 class Toolset(GestureHandler):
+    def clear_screen(self, layer):
+        global lines
+        layer[:] = 0
+        lines = []
+        layer = cv2.resize(layer, (base_width, base_height))
+        return layer
+
     def erase_nearby(self, layer, cursor, threshold=10):
         global lines
         if cursor is None:
-            print("Cursor not detected; skipping erase.")
-            return layer  # No cursor, no erasing
+            return layer
 
-        # filter lines that are NOT near the cursor
+        # filter lines not near the cursor
         lines_to_keep = []
         for line in lines:
             start, end = line
@@ -134,8 +141,8 @@ class Toolset(GestureHandler):
 
         lines = lines_to_keep
 
-        # Clear and redraw remaining lines on the note layer
-        layer = np.zeros_like(layer)
+        # clear and redraw
+        layer[:] = 0
         for line in lines:
             cv2.line(layer, line[0], line[1], (0, 0, 255, 128), thickness=3)
 
@@ -146,7 +153,7 @@ class Toolset(GestureHandler):
         x1, y1 = start
         x2, y2 = end
 
-        # Calculate perpendicular distance from cursor to line segment
+        # calculate cursor-line distance
         num = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
         den = ((y2 - y1)**2 + (x2 - x1)**2)**0.5
         dist = num / den if den != 0 else float('inf')
@@ -186,7 +193,7 @@ class PDFHandler:
         return images
 
     def img2pdf(self, img_paths, output_pdf_path):
-        c = canvas.Canvas(output_pdf_path)
+        c = canv.Canvas(output_pdf_path)
         for image_path in img_paths:
             # open the image
             img = Image.open(image_path)
@@ -206,6 +213,7 @@ class PDFHandler:
             pdf_layer[:, :, c] = ((1 - alpha) * pdf_layer[:, :, c] + alpha * note_layer[:, :, c])
 
         # save the updated image
+        print(f"saving {page_path}")
         cv2.imwrite(page_path, pdf_layer)
 
     def next_page(self, pdf_imgs):
@@ -230,6 +238,7 @@ tool = Toolset()
 # initialize files
 pdf_path = "/Users/klee9/Desktop/oop.pdf"
 output_dir = "/Users/klee9/Desktop/pdf2img"
+pdf_output_dir = pdf_path
 
 pdf_imgs = pdf.pdf2img(pdf_path, output_dir)
 page_num = 0
@@ -242,9 +251,34 @@ img = cv2.resize(img, (webcam_width, webcam_height))
 
 lines = []
 prev_index = None
+color = (0, 0, 0, 128)
 
 pdf_layer = img.copy()
 note_layer = np.zeros((pdf_layer.shape[0], pdf_layer.shape[1], 4), dtype=np.uint8)
+
+# initalize Kalman filter
+kalman = cv2.KalmanFilter(4, 2)
+
+kalman.transitionMatrix = np.array([
+    [1, 0, 1, 0],  # x = x + vx
+    [0, 1, 0, 1],  # y = y + vy
+    [0, 0, 1, 0],  # vx = vx
+    [0, 0, 0, 1]   # vy = vy
+], dtype=np.float32)
+
+kalman.measurementMatrix = np.array([
+    [1, 0, 0, 0],  # measure x
+    [0, 1, 0, 0]   # measure y
+], dtype=np.float32)
+
+# process noise covariance matrix
+kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
+
+# Measurement noise covariance matrix
+kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1
+
+# initial state 
+kalman.statePre = np.zeros((4, 1), dtype=np.float32)
 
 while True:
     base_layer = webcam.get_frame()
@@ -269,15 +303,19 @@ while True:
             thumb = hand_landmarks.landmark[mp.solutions.hands.HandLandmark.THUMB_TIP]
 
             # convert normalized coordinates to pixel coordinates
-            index_coords = (int(index.x * base_width), int(index.y * base_height))
+            index_coords = np.array([[index.x * base_width], [index.y * base_height]], dtype=np.float32)
             thumb_coords = (int(thumb.x * base_width), int(thumb.y * base_height))
+
+            kalman.correct(index_coords)
+            prediction = kalman.predict()
+            index_coords = (int(prediction[0]), int(prediction[1]))
+            cursor_coords = index_coords
 
             # draw a line while pinching
             if prev_index and gesture.is_pinching(thumb, index):
-                cv2.line(note_layer, prev_index, index_coords, (0, 0, 255, 128), thickness=3)
+                cv2.line(note_layer, prev_index, index_coords, color, thickness=3)
                 lines.append((prev_index, index_coords))
 
-            cursor_coords = index_coords
             prev_index = index_coords
 
     # blend the note layer with the pdf layer
@@ -290,7 +328,7 @@ while True:
 
     # draw the cursor on the display layer
     if cursor_coords:
-        cv2.circle(display_layer, cursor_coords, 5, (0, 255, 0), -1)
+        cv2.circle(display_layer, cursor_coords, 5, color, -1)
 
     # display the composite frame with the cursor
     cv2.imshow("Note", display_layer)
@@ -300,8 +338,7 @@ while True:
 
     # c: clear the note layer
     if key == ord('c'): 
-        note_layer = np.zeros((note_layer.shape[0], note_layer.shape[1], 4), dtype=np.uint8)
-        lines = []
+        note_layer[:] = tool.clear_screen(note_layer)
 
     # e: erase line closest to the cursor
     elif key == ord('e'):
@@ -311,15 +348,52 @@ while True:
     elif key == ord('n'):
         pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
         pdf_layer = pdf.next_page(pdf_imgs)
+        page_num = (page_num + 1) % len(pdf_imgs)
 
     # p: go to the previous page
     elif key == ord('p'):
         pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
         pdf_layer = pdf.prev_page(pdf_imgs)
+        page_num = (page_num - 1) % len(pdf_imgs)
+
+    # change colors
+    elif key == ord('1'): # red
+        color = (0, 0, 255, 128)
+
+    elif key == ord('2'): # orange
+        color = (0, 165, 255, 128)
+
+    elif key == ord('3'): # yellow
+        color = (0, 255, 255, 128)
+
+    elif key == ord('4'): # green
+        color = (0, 255, 0, 128)
+
+    elif key == ord('5'): # blue
+        color = (255, 0, 0, 128)
+
+    elif key == ord('6'): # indigo
+        color = (130, 0, 75, 128)
+
+    elif key == ord('7'): # pink
+        color = (238, 130, 238, 128)
+
+    elif key == ord('8'): # white
+        color = (255, 255, 255, 128)
+
+    elif key == ord('9'): # black
+        color = (0, 0, 0, 128)
 
     # esc: exit
     elif key == 27:
+        # save the last page, then convert the whole thing into pdf
+        pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
+        pdf.img2pdf(pdf_imgs, pdf_output_dir)
         break
 
 webcam.release()
 cv2.destroyAllWindows()
+
+# todo
+# add eraser
+# add swiping motions for changing colors
