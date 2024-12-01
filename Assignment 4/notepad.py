@@ -164,6 +164,7 @@ class PDFHandler:
     def __init__(self, page_num=0):
         self.page_num = page_num
 
+    # returns the resolutions of a pdf slide
     def get_resolutions(self, pdf_path, dpi=100):
         doc = fitz.open(pdf_path)
         rect = doc[0].rect
@@ -173,6 +174,7 @@ class PDFHandler:
 
         return width, height
 
+    # converts pdf to image (for adding annotations)
     def pdf2img(self, pdf_path, output_dir):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -191,6 +193,7 @@ class PDFHandler:
         doc.close()
         return images
 
+    # converts image to pdf
     def img2pdf(self, img_paths, output_pdf_path):
         c = canv.Canvas(output_pdf_path)
         for image_path in img_paths:
@@ -205,6 +208,7 @@ class PDFHandler:
 
         c.save()
 
+    # saves the current page
     def save_page(self, page_path, pdf_layer, note_layer):
         b, g, r, a = cv2.split(note_layer)
         alpha = a / 255.0
@@ -215,12 +219,14 @@ class PDFHandler:
         print(f"saving {page_path}")
         cv2.imwrite(page_path, pdf_layer)
 
+    # returns next page
     def next_page(self, pdf_imgs):
         self.page_num = (self.page_num + 1) % len(pdf_imgs)
         img = cv2.imread(pdf_imgs[self.page_num])
         img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
         return img.copy()
 
+    # returns previous page
     def prev_page(self, pdf_imgs):
         self.page_num = (self.page_num - 1) % len(pdf_imgs)
         img = cv2.imread(pdf_imgs[self.page_num])
@@ -273,7 +279,7 @@ colors = [
 current_color_index = 0
 color = colors[current_color_index]
 
-# initalize Kalman filter
+# initalize kalman filter
 kalman = cv2.KalmanFilter(4, 2)
 
 kalman.transitionMatrix = np.array([
@@ -292,7 +298,7 @@ kalman.measurementMatrix = np.array([
 kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
 kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1
 
-# initial state 
+# initial states 
 kalman.statePre = np.zeros((4, 1), dtype=np.float32)
 kalman.statePost = kalman.statePre.copy()
 
@@ -301,6 +307,13 @@ while True:
     if base_layer is None:
         break
     
+    # get base layer dimensions
+    base_height, base_width, _ = base_layer.shape
+
+    # resize pdf and note layers to match the base layer
+    pdf_layer = cv2.resize(pdf_layer, (base_width, base_height))
+    note_layer = cv2.resize(note_layer, (base_width, base_height))
+
     # detect hands
     results = detector.find_hands(base_layer)
     cursor_coords = None
@@ -358,7 +371,7 @@ while True:
     # c: clear the note layer
     if key == ord('c'): 
         note_layer = tool.clear_screen(note_layer)
-        pdf_layer = pdf_layer.copy()
+        pdf_layer = cv2.imread(pdf_imgs[page_num])
 
     # e: erase line closest to the cursor
     elif key == ord('e'):
@@ -394,7 +407,3 @@ cv2.destroyAllWindows()
 
 # todo
 # add eraser
-# add swiping motions for changing colors
-# check width, height vars
-# improve effieciency
-
