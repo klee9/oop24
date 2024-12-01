@@ -1,7 +1,6 @@
-opencv-python-headless==4.7.0.72
-mediapipe==0.9.5
-reportlab==3.6.12
-Pillow==9.5.0
-numpy==1.24.4
-PyMuPDF==1.22.5
-pyautogui==0.9.55
+opencv-python-headless==4.10.0
+mediapipe==0.10.18
+reportlab==4.2.5
+Pillow==11.0.0
+numpy==1.26.4
+PyMuPDF==1.24.14
