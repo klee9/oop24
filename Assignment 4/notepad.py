@@ -119,7 +119,7 @@ class GestureHandler:
         return False
 
 # toolset class
-class Toolset(GestureHandler):
+class Toolset():
     def clear_screen(self, layer):
         global lines
         layer[:] = 0
@@ -335,13 +335,14 @@ while True:
             cursor_coords = index_coords
             
             # check for swiping gestures
-            if gesture.swipe_left(thumb, index):
-                current_color_index = (current_color_index - 1) % len(colors)
-                color = colors[current_color_index]
+            if not gesture.is_pinching(thumb, index):
+                if gesture.swipe_left(thumb, index):
+                    current_color_index = (current_color_index - 1) % len(colors)
+                    color = colors[current_color_index]
 
-            elif gesture.swipe_right(thumb, index):
-                current_color_index = (current_color_index + 1) % len(colors)
-                color = colors[current_color_index]
+                if gesture.swipe_right(thumb, index):
+                    current_color_index = (current_color_index + 1) % len(colors)
+                    color = colors[current_color_index]
 
             # draw a line while pinching
             if prev_index and gesture.is_pinching(thumb, index):
