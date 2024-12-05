@@ -1,37 +1,22 @@
 import os
 import sys
 import subprocess
-import math
 
-def setup_venv():
+def install_dependencies(requirements_file):
+    '''
+    Install all dependencies
+
+    Args:
+        requirements_file (string): name of the requirements file 
+    '''
     try:
-        # create the virtual environment
-        env_path = "v_env"
-        if not os.path.exists(env_path):
-            print("Creating virtual environment...")
-            subprocess.check_call([sys.executable, "-m", "venv", env_path])
-        else:
-            print("Virtual environment already exists.")
-
-        # use the Python executable from the virtual environment
-        env_python = os.path.join(env_path, "bin", "python")
-
-        # install required packages
-        print("Installing dependencies...")
-        subprocess.check_call([env_python, "-m", "pip", "install", "--upgrade", "pip"])
-        subprocess.check_call([env_python, "-m", "pip", "install", "opencv-python", "opencv-python-headless"])
-        subprocess.check_call([env_python, "-m", "pip", "install", "pyautogui"])
-        subprocess.check_call([env_python, "-m", "pip", "install", "mediapipe"])
-
-        print("Setup complete.")
-
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_file])
+        print("Dependencies installed successfully.")
     except subprocess.CalledProcessError as e:
-        print(f"Error during setup: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"An error occurred: {e}")
 
-# set up a virtual environment
-# setup_venv()
+# install dependencies
+# install_dependencies("requirements.txt")
 
 import cv2
 import numpy as np
@@ -41,15 +26,30 @@ from PIL import Image
 from io import BytesIO
 from reportlab.pdfgen import canvas as canv
 
-# webcam class
 class Webcam:
+    '''
+    A class for handling webcam-related actions
+    '''
     def __init__(self, camera_idx=0, width=840, height=480):
-        # launch webcam
+        '''
+        Initialize the Webcam
+
+        Args: 
+            camera_idx (int):
+            width (int): The width of the webcam feed
+            height(int): The height of the webcam feed
+        '''
         self.cam = cv2.VideoCapture(camera_idx)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
     def get_frame(self):
+        '''
+        Get webcam frame
+
+        Returns:
+            numpy.ndarray: The flipped(mirror-view) webcam feed
+        '''
         ret, frame = self.cam.read()
         if not ret:
             return None
@@ -57,12 +57,25 @@ class Webcam:
         return cv2.flip(frame, 1)
 
     def release(self):
+        '''
+        Close webcam
+        '''
         self.cam.release()
         cv2.destroyAllWindows()
 
-# hand detector class
 class HandDetector:
+    '''
+    A class for handling hand detection and tracking
+    '''
     def __init__(self, max_hands=1, detection_conf=0.6, tracking_conf=0.6):
+        '''
+        Initialize the Hand Detector
+
+        Args:
+            max_hands (int): The maximum number of hands to track
+            detection_conf (float): The confidence threshold of hand detection
+            tracking_conf (float): The confidence threshold of hand tracking
+        '''
         self.hands = mp.solutions.hands.Hands(
             static_image_mode=False,
             max_num_hands=max_hands,
@@ -72,11 +85,27 @@ class HandDetector:
         self.brush = mp.solutions.drawing_utils
 
     def find_hands(self, frame):
+        '''
+        Detect hands and return results
+
+        Args:
+            frame (numpy.ndarray): The frame of the webcam feed
+
+        Returns:
+            mediapipe.python.solutions.hands.HandsResult: The results of processed data
+        '''
         rgb_f = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.hands.process(rgb_f)
         return results
 
     def draw_landmarks(self, frame, hand_landmarks):
+        '''
+        Draw and return hand landmarks
+
+        Args:
+            frame (numpy.ndarray): The frame of the webcam feed
+            hand_landmarks (list): Detected landmarks
+        '''
         if hand_landmarks:
             for handLms in hand_landmarks:
                 # draw the landmarks on the frame
@@ -88,9 +117,8 @@ class HandDetector:
                     self.brush.DrawingSpec(color=(255, 0, 0), thickness=2)
                 )
 
-# gesture handler class
 class GestureHandler:
-    def __init__(self, pinch_threshold=0.0022, swipe_threshold=0.05):
+    def __init__(self, pinch_threshold=0.0020, swipe_threshold=0.05):
         self.pinch_threshold = pinch_threshold
         self.swipe_threshold = swipe_threshold
         self.previous_index_x = None
@@ -118,15 +146,37 @@ class GestureHandler:
         self.previous_index_x = index.x
         return False
 
-# toolset class
-class Toolset():
+class Eraser:
+    '''
+    A simple class for erasing
+    '''
     def clear_screen(self, layer):
+        '''
+        Clear screen (erase everything on the screen)
+
+        Args:
+            layer (numpy.ndarray): A layer to be erased
+
+        Returns:
+            numpy.ndarray: The erased layer
+        '''
         global lines
         layer[:] = 0
         lines = []
         return layer
 
     def erase_nearby(self, layer, cursor, threshold=10):
+        '''
+        Erases nearby lines
+
+        Args:
+            layer (numpy.ndarray): A layer to be erased
+            cursor (tuple): The cursor being used in the program
+            threshold (int): A threshold for cursor-line distance for erasing
+
+        Returns:
+            numpy.ndarray: The layer that was erased
+        '''
         global lines
         if cursor is None:
             return layer
@@ -143,11 +193,23 @@ class Toolset():
         # clear and redraw
         layer[:] = 0
         for line in lines:
-            cv2.line(layer, line[0], line[1], (0, 0, 255, 128), thickness=3)
+            cv2.line(layer, line[0], line[1], color, thickness=3)
 
         return layer
 
     def is_near_line(self, cursor, start, end, threshold=10):
+        '''
+        Checks if a line is nearby
+
+        Args:
+            cursor (tuple): The cursor being used in the program
+            start (tuple): The starting point of the line
+            end (tuple): The end point of the line
+            threshold (int): The threshold for cursor-line distance
+
+        Returns:
+            bool: The comparison result of distance and threshold
+        '''
         x0, y0 = cursor
         x1, y1 = start
         x2, y2 = end
@@ -159,13 +221,30 @@ class Toolset():
 
         return dist <= threshold
 
-# pdf handler class
 class PDFHandler:
+    '''
+    A class for handling PDFs
+    '''
     def __init__(self, page_num=0):
+        '''
+        Initializes the pdf Handler class
+        
+        Args:
+            page_num (int): The page number of the pdf file
+        '''
         self.page_num = page_num
 
-    # returns the resolutions of a pdf slide
-    def get_resolutions(self, pdf_path, dpi=100):
+    def get_resolutions(self, pdf_path, dpi=72):
+        '''
+        Calculate and return the resolutions of the pdf file
+
+        Args:
+            pdf_path (string): The path of the pdf file
+            dpi (int): The dpi value for changing resolutions of the pdf file
+
+        Returns:
+            tuple: The width and height of the pdf file
+        '''
         doc = fitz.open(pdf_path)
         rect = doc[0].rect
         width = int(rect.width * dpi / 72)
@@ -233,17 +312,17 @@ class PDFHandler:
         img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
         return img.copy()
 
+# initialize files
+pdf_path = input("PDF Path >> ") # "/Users/klee9/Desktop/oop.pdf"
+output_dir = input("Save Path >> ") # "/Users/klee9/Desktop/pdf2img"
+pdf_output_dir = pdf_path
+
 # initialize classes
 webcam = Webcam()
 detector = HandDetector()
 gesture = GestureHandler()
 pdf = PDFHandler()
-tool = Toolset()
-
-# initialize files
-pdf_path = "/Users/klee9/Desktop/oop.pdf"
-output_dir = "/Users/klee9/Desktop/pdf2img"
-pdf_output_dir = pdf_path
+eraser = Eraser()
 
 pdf_imgs = pdf.pdf2img(pdf_path, output_dir)
 page_num = 0
@@ -335,14 +414,13 @@ while True:
             cursor_coords = index_coords
             
             # check for swiping gestures
-            if not gesture.is_pinching(thumb, index):
-                if gesture.swipe_left(thumb, index):
-                    current_color_index = (current_color_index - 1) % len(colors)
-                    color = colors[current_color_index]
+            if gesture.swipe_left(thumb, index):
+                current_color_index = (current_color_index - 1) % len(colors)
+                color = colors[current_color_index]
 
-                if gesture.swipe_right(thumb, index):
-                    current_color_index = (current_color_index + 1) % len(colors)
-                    color = colors[current_color_index]
+            elif gesture.swipe_right(thumb, index):
+                current_color_index = (current_color_index + 1) % len(colors)
+                color = colors[current_color_index]
 
             # draw a line while pinching
             if prev_index and gesture.is_pinching(thumb, index):
@@ -364,20 +442,20 @@ while True:
         cv2.circle(display_layer, cursor_coords, 5, color, -1)
 
     # display the composite frame with the cursor
-    cv2.imshow("Note", display_layer)
+    cv2.imshow("Interactive Notepad", display_layer)
 
     # handle key events
     key = cv2.waitKey(1) & 0xFF
 
     # c: clear the note layer
     if key == ord('c'): 
-        note_layer = tool.clear_screen(note_layer)
+        note_layer = eraser.clear_screen(note_layer)
         pdf_layer = cv2.imread(pdf_imgs[page_num])
 
     # e: erase line closest to the cursor
     elif key == ord('e'):
-        note_layer = tool.erase_nearby(note_layer, cursor_coords, threshold=10)
-        pdf_layer = pdf_layer.copy()
+        note_layer = eraser.erase_nearby(note_layer, cursor_coords, threshold=10)
+        pdf_layer = cv2.imread(pdf_imgs[page_num])
 
     # n: go to the next page
     elif key == ord('n'):
@@ -405,6 +483,3 @@ while True:
 
 webcam.release()
 cv2.destroyAllWindows()
-
-# todo
-# add eraser
