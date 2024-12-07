@@ -231,8 +231,10 @@ class PDFHandler:
         
         Args:
             page_num (int): The page number of the pdf file
+            eraser (Eraser): An object of the Eraser class
         '''
         self.page_num = page_num
+        self.eraser = Eraser()
 
     def get_resolutions(self, pdf_path, dpi=72):
         '''
@@ -299,14 +301,16 @@ class PDFHandler:
         cv2.imwrite(page_path, pdf_layer)
 
     # returns next page
-    def next_page(self, pdf_imgs):
+    def next_page(self, pdf_imgs, layer):
+        self.eraser.clear_screen(layer)
         self.page_num = (self.page_num + 1) % len(pdf_imgs)
         img = cv2.imread(pdf_imgs[self.page_num])
         img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
         return img.copy()
 
     # returns previous page
-    def prev_page(self, pdf_imgs):
+    def prev_page(self, pdf_imgs, layer):
+        self.eraser.clear_screen(layer)
         self.page_num = (self.page_num - 1) % len(pdf_imgs)
         img = cv2.imread(pdf_imgs[self.page_num])
         img = cv2.resize(img, self.get_resolutions(pdf_imgs[self.page_num]))
@@ -460,13 +464,13 @@ while True:
     # n: go to the next page
     elif key == ord('n'):
         pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
-        pdf_layer = pdf.next_page(pdf_imgs)
+        pdf_layer = pdf.next_page(pdf_imgs, note_layer)
         page_num = (page_num + 1) % len(pdf_imgs)
 
     # p: go to the previous page
     elif key == ord('p'):
         pdf.save_page(pdf_imgs[page_num], pdf_layer, note_layer)
-        pdf_layer = pdf.prev_page(pdf_imgs)
+        pdf_layer = pdf.prev_page(pdf_imgs, note_layer)
         page_num = (page_num - 1) % len(pdf_imgs)
 
     # change colors
